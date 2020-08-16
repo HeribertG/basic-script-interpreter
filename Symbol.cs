@@ -129,13 +129,6 @@ namespace basic_script_interpreter
             tokEOF
         }
 
-        private Tokens _token;
-        private string _text;
-        private object _value;
-        private int _line;
-        private int _col;
-        private int _Index;
-
         internal void Position(int line, int col, int index)
         {
             Line = line;

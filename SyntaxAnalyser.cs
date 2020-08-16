@@ -54,7 +54,7 @@ namespace basic_script_interpreter
             _lex.Connect(source);
             // globalen und ersten Gültigkeitsbereich anlegen
             _symboltable = new Scopes();
-            _symboltable.Push();
+            _symboltable.PushScope();
 
             _code = code;
 
@@ -502,7 +502,7 @@ namespace basic_script_interpreter
                         errorObject.Raise((int)InterpreterError.parsErrors.errSyntaxViolation, "SyntaxAnalyser.FunctionDefinition", "Expected: ',' or ')' or identifier", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
                 }
 
-                // Code-Generation
+                
                 // Funktion im aktuellen Scope definieren
                 definition = _symboltable.Allocate(ident, null, isSub == true ? Identifier.IdentifierTypes.idSub : Identifier.IdentifierTypes.idFunction);
                 _code.Add(Code.Opcodes.opAllocVar, ident); // Funktionsvariable anlegen
@@ -512,7 +512,7 @@ namespace basic_script_interpreter
                 definition.address = _code.EndOfCodePC + 1;
 
                 // Neuen Scope für die Funktion öffnen
-                _symboltable.Push(null);
+                _symboltable.PushScope();
 
                 // Formale Parameter als lokale Variablen der Funktion definieren
                 definition.formalParameters = formalParameters;
@@ -1137,7 +1137,7 @@ namespace basic_script_interpreter
                         if (_optionExplicit & !_symboltable.Exists(_sym.Text))
                             errorObject.Raise((int)InterpreterError.parsErrors.errIdentifierAlreadyExists, "SyntaxAnalyser.Terminal", "Identifier '" + _sym.Text + "' has not be declared", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
 
-                        if (_symboltable.Exists(_sym.Text, null/* Conversion error: Set to default value for this argument */, Identifier.IdentifierTypes.idFunction))
+                        if (_symboltable.Exists(_sym.Text, null, Identifier.IdentifierTypes.idFunction))
                         {
                             // Userdefinierte Funktion aufrufen
                             ident = _sym.Text;
@@ -1148,7 +1148,7 @@ namespace basic_script_interpreter
 
                             _code.Add(Code.Opcodes.opPushVariable, ident); // Funktionsresultat auf den Stack
                         }
-                        else if (_symboltable.Exists(_sym.Text, null/* Conversion error: Set to default value for this argument */, Identifier.IdentifierTypes.idSub))
+                        else if (_symboltable.Exists(_sym.Text, null, Identifier.IdentifierTypes.idSub))
                             errorObject.Raise((int)InterpreterError.parsErrors.errCannotCallSubInExpression, "SyntaxAnalyser.Terminal", "Cannot call sub '" + _sym.Text + "' in expression", _sym.Line, _sym.Col, _sym.Index);
                         else
                         {

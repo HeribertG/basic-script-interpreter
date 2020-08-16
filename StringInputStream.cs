@@ -56,13 +56,13 @@ namespace basic_script_interpreter
             {
                 var result = string.Empty;
 
-                Index += 1;
+                Index++;
 
                 string nextChar = string.Empty;
                 if (Index <= _sourcetext.Length)
                 {
                     nextChar = _sourcetext.Substring(Index - 1, 1);
-                    Col = Col + 1;
+                    Col++;
 
                     switch (nextChar)
                     {

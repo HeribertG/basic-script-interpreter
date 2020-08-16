@@ -8,7 +8,7 @@ using static basic_script_interpreter.Identifier;
 // Das jeweils zuoberst liegende Scope-Objekt dient dabei als
 // normaler Programm-Stack.
 //
-// Variablen _symboltable (parser.cls) und _scopes (code.cls)
+// Variablen _symboltable (SyntaxAnalyser.cls) und _scopes (Code.cls)
 // sind Scopes-Objekte.
 namespace basic_script_interpreter
 {
@@ -18,27 +18,25 @@ namespace basic_script_interpreter
         private List<Scope> _scopes = new List<Scope>();
 
 
-        public void Push(object s = null)
+        public void PushScope(Scope s = null)
         {
             if (s == null)
                 _scopes.Add(new Scope());
             else
             {
-                var tmp = new Scope();
-                tmp.Push(s);
-                _scopes.Add(tmp);
+                _scopes.Add(s);
             }
-                
+
         }
 
 
-        public  object PopScopes(int? index)
+        public Identifier PopScopes(int? index = null)
         {
-            var ind= -1;
+            var ind = -1;
             if (index.HasValue) { ind = index.Value; }
-            var scope = _scopes[_scopes.Count()-1];
+            var scope = _scopes[_scopes.Count() - 1];
             var result = scope.Pop(ind);
-            
+
             return result;
         }
 
@@ -47,13 +45,16 @@ namespace basic_script_interpreter
             return _scopes[_scopes.Count() - 1].Allocate(name, value, idType);
         }
 
+        // Von oben nach unten alle Scopes durchgehen und dem
+        // ersten benannten Wert mit dem übergebenen Namen den
+        // Wert zuweisen.
         public void Assign(string name, object value)
         {
             var vari = getVariable(name);
             vari.value = value;
         }
 
-
+        // dito, jedoch Wert zurückliefern (als kompletten Identifier)
         public Identifier Retrieve(string name)
         {
             return getVariable(name);
@@ -128,6 +129,7 @@ namespace basic_script_interpreter
                         }
 
                     }
+                    return result;
 
                 }
             }
@@ -136,19 +138,15 @@ namespace basic_script_interpreter
 
         }
 
-        public void Push(Identifier value)
+        public void Push(object value)
         {
-            try
+
+            if (value != null)
             {
-                if (value != null)
-                {
-                    Scope s = _scopes[_scopes.Count() - 1];
-                    s.Push(value);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.Print("Scope.Push: " + ex.Message);
+                Scope s = _scopes[_scopes.Count() - 1];
+                var c = new Identifier();
+                c.value = value;
+                s.Push(c);
             }
         }
 

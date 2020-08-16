@@ -2,17 +2,10 @@
 using System;
 using System.Collections.ObjectModel;
 
-// -----------------------------------------------------------------
-// Copyright © 2011 Heribert Gasparoli
-// -----------------------------------------------------------------
-// 
-// Stand: 01/2011
-// 
-// -----------------------------------------------------------------
 
 namespace basic_script_interpreter
 {
-    public class Code :IDisposable
+    public class Code : IDisposable
     {
 
 
@@ -183,8 +176,6 @@ namespace basic_script_interpreter
             }
             return false;
         }
-
-
         //Code ausführen
         public bool Run()
         {
@@ -197,53 +188,38 @@ namespace basic_script_interpreter
         }
 
         public InterpreterError ErrorObject { get; private set; }
-
         public bool AllowUI { get; set; }
         public int CodeTimeout { get; set; } = 60000; // 60 Sekunden default
         public bool Cancel { get; set; } //Bricht den Programablauf ab
         public bool Running { get; private set; } // wird noch code ausgeführt?
-
-      
-
-
-        //Befehlszählerstand der aktuell letzten Anweisung
         internal int EndOfCodePC
         {
             get
             {
                 return _code.Count;
             }
-        }
-
-
+        }  //Befehlszählerstand der aktuell letzten Anweisung
         public Identifier ImportAdd(string name, object value = null, Identifier.IdentifierTypes idType = Identifier.IdentifierTypes.idVariable
                                      )
         {
             return _external.Allocate(name, value, idType);
         }
-
         public void ImportItem(string name, object value = null)
         {
             _external.Assign(name, value);
         }
-
-
-        //Globalen Gültigkeitsbereich löschen
-        public void ImportClear()
+        public void ImportClear() //Globalen Gültigkeitsbereich löschen
         {
             _external = new Scope();
         }
-
         public object ImportRead(string name)
         {
             return _external.Retrieve(name);
         }
-
         internal Scope External()
         {
             return _external;
         }
-
         public Code Clone()
         {
             var clone = new Code();
@@ -255,13 +231,10 @@ namespace basic_script_interpreter
                 clone.ImportAdd(((Identifier)_external.CloneItem(i)).name);
             return clone;
         }
-
         internal void CloneAdd(object Value)
         {
             _code.Add(Value);
         }
-
-
         internal int Add(Opcodes opCode, params object[] parameters)
         {
             object[] operation = new object[parameters.Length + 1];
@@ -274,8 +247,6 @@ namespace basic_script_interpreter
 
             return _code.Count;
         }
-
-
         internal void FixUp(int index, params object[] parameters)
         {
             object[] operation = new object[parameters.Length + 1];
@@ -297,14 +268,14 @@ namespace basic_script_interpreter
         private void Interpret()
         {
             object[] operation;
-            object Akkumulator;
-            object Register;
+            object akkumulator;
+            object register;
 
             int startTime;
 
             _scopes = new Scopes();
-            _scopes.Push(_external);
-            _scopes.Push(null);
+            _scopes.PushScope(_external);
+            _scopes.PushScope();
 
             startTime = GetTickCount();
             Cancel = false;
@@ -317,50 +288,47 @@ namespace basic_script_interpreter
             object xPos, default_Renamed, yPos;
             while ((_pc <= _code.Count - 1) & _running)
             {
-                Akkumulator = null;
-                Register = null;
+                akkumulator = null;
+                register = null;
 
                 operation = (Object[])_code[_pc];
 
                 switch ((Opcodes)operation.GetValue(0))
                 {
-                    case Opcodes.opAllocConst // Konstante allozieren
-                   :
+                    // Konstante allozieren
+                    case Opcodes.opAllocConst:
                         {
                             // Parameter:    Name der Konstanten; Wert
                             _scopes.Allocate(operation.GetValue(1).ToString(), operation.GetValue(2).ToString(), Identifier.IdentifierTypes.idConst);
                             break;
                         }
-
-                    case Opcodes.opAllocVar // Variable allozieren
-             :
+                    // Variable allozieren
+                    case Opcodes.opAllocVar:
                         {
                             // Parameter:    Name der Variablen
                             _scopes.Allocate(operation.GetValue(1).ToString());
                             break;
                         }
-
-                    case Opcodes.opPushValue // Wert auf den Stack schieben
-             :
+                    // Wert auf den Stack schieben
+                    case Opcodes.opPushValue:
                         {
                             // Parameter:    Wert
                             _scopes.Push(operation.GetValue(1));
                             break;
                         }
-
-                    case Opcodes.opPushVariable // Wert einer Variablen auf den Stack schieben
-             :
+                    // Wert einer Variablen auf den Stack schieben
+                    case Opcodes.opPushVariable:
                         {
                             // Parameter:    Variablenname
                             try
                             {
-                                Register = _scopes.Retrieve(operation.GetValue(1).ToString()).value;
+                                register = _scopes.Retrieve(operation.GetValue(1).ToString()).value;
                             }
-                            catch (Exception ex)
+                            catch (Exception)
                             {
                                 // Variable nicht alloziert, also bei Host nachfragen
                                 accepted = false;
-                                Retrieve?.Invoke(operation.GetValue(1).ToString(), Register.ToString(), accepted);
+                                Retrieve?.Invoke(operation.GetValue(1).ToString(), register.ToString(), accepted);
                                 if (!accepted)
                                 {
                                     // der Host weiß nichts von der Var. Implizit anlegen tun wir
@@ -372,124 +340,123 @@ namespace basic_script_interpreter
                                 }
                             }
 
-                            //if (TypeName(register) == "Error")
-                            //{
-                            //    _running = false;
-                            //    ErrorObject.Raise(InterpreterError.runErrors.errUninitializedVar, "Code.Run", "Variable '" + operation.GetValue(1).ToString() + "' not hasn´t been assigned a value yet", 0, 0, 0);
-                            //}
+                            if (register.ToString() == "Error")
+                            {
+                                _running = false;
+                                ErrorObject.Raise((int)InterpreterError.runErrors.errUninitializedVar, "Code.Run", "Variable '" + operation.GetValue(1).ToString() + "' not hasn´t been assigned a value yet", 0, 0, 0);
+                            }
 
-                            _scopes.Push(Register);
+                            _scopes.Push(register);
                             break;
                         }
-
-                    case Opcodes.opPop // entfernt obersten Wert vom Stack
-             :
+                    // entfernt obersten Wert vom Stack
+                    case Opcodes.opPop:
                         {
-                            _scopes.PopScopes(null);
+                            _scopes.PopScopes();
                             break;
                         }
-
-                    case Opcodes.opPopWithIndex // legt den n-ten Stackwert zuoberst auf den Stack
-             :
+                    // legt den n-ten Stackwert zuoberst auf den Stack
+                    case Opcodes.opPopWithIndex:
                         {
                             // Parameter:    Index in den Stack (von oben an gezählt: 0..n)
                             _scopes.Push(_scopes.Pop(Convert.ToInt32(operation.GetValue(1))));
                             break;
                         }
-
-                    case Opcodes.opAssign // Wert auf dem Stack einer Variablen zuweisen
-             :
+                    // Wert auf dem Stack einer Variablen zuweisen
+                    case Opcodes.opAssign:
                         {
                             // Parameter:    Variablenname
                             // Stack:        der zuzuweisende Wert
                             try
                             {
-                                Register = _scopes.PopScopes(null);
-                                _scopes.Assign(operation.GetValue(1).ToString(), Register);
+                                object result = null;
+                                register = _scopes.Pop();
+                                if (register is Identifier) { result = ((Identifier)register).value; } else { result = register; }
+                                _scopes.Assign(operation.GetValue(1).ToString(), result);
                             }
-                            catch (Exception ex)
+                            catch (Exception)
                             {
                                 // Variable nicht alloziert, also Host anbieten
                                 accepted = false;
-                                Assign?.Invoke(operation.GetValue(1).ToString(), Register.ToString(), ref accepted);
+                                Assign?.Invoke(operation.GetValue(1).ToString(), register.ToString(), ref accepted);
                                 if (!accepted)
                                     // Host hat nicht mit Var am Hut, dann legen wir
                                     // sie eben selbst an
-                                    _scopes.Allocate(operation.GetValue(1).ToString(), Register.ToString());
+                                    _scopes.Allocate(operation.GetValue(1).ToString(), register.ToString());
                             }
 
                             break;
                         }
 
                     case Opcodes.opAdd:
-                        binaryMathOperators(operation, Akkumulator, Register);
+                        binaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opSub:
-                        binaryMathOperators(operation, Akkumulator, Register);
+                        binaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opMultiplication:
-                        binaryMathOperators(operation, Akkumulator, Register);
+                        binaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opDivision:
-                        binaryMathOperators(operation, Akkumulator, Register);
+                        binaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opDiv:
-                        binaryMathOperators(operation, Akkumulator, Register);
+                        binaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opMod:
-                        binaryMathOperators(operation, Akkumulator, Register);
+                        binaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opPower:
-                        binaryMathOperators(operation, Akkumulator, Register);
+                        binaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opStringConcat:
-                        binaryMathOperators(operation, Akkumulator, Register);
+                        binaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opOr:
-                        binaryMathOperators(operation, Akkumulator, Register);
+                        binaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opAnd:
-                        binaryMathOperators(operation, Akkumulator, Register);
+                        binaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opEq:
-                        binaryMathOperators(operation, Akkumulator, Register);
+                        binaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opNotEq:
-                        binaryMathOperators(operation, Akkumulator, Register);
+                        binaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.oplt:
-                        binaryMathOperators(operation, Akkumulator, Register);
+                        binaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opLEq:
-                        binaryMathOperators(operation, Akkumulator, Register);
+                        binaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opGt:
-                        binaryMathOperators(operation, Akkumulator, Register);
+                        binaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opGEq:
-                        binaryMathOperators(operation, Akkumulator, Register);
+                        binaryMathOperators(operation, akkumulator, register);
                         break;
 
                     case Opcodes.opNegate:
-                        unaryMathOperators(operation, Akkumulator, Register);
+                        unaryMathOperators(operation);
                         break;
                     case Opcodes.opNot:
-                        unaryMathOperators(operation, Akkumulator, Register);
+                        unaryMathOperators(operation);
                         break;
                     case Opcodes.opFactorial:
-                        unaryMathOperators(operation, Akkumulator, Register);
+                        unaryMathOperators(operation);
                         break;
                     case Opcodes.opSin:
-                        unaryMathOperators(operation, Akkumulator, Register);
+                        unaryMathOperators(operation);
                         break;
                     case Opcodes.opCos:
-                        unaryMathOperators(operation, Akkumulator, Register);
+                        unaryMathOperators(operation);
                         break;
                     case Opcodes.opTan:
-                        unaryMathOperators(operation, Akkumulator, Register);
+                        unaryMathOperators(operation);
                         break;
                     case Opcodes.opATan:
-                        unaryMathOperators(operation, Akkumulator, Register);
+                        unaryMathOperators(operation);
                         break;
 
                     case Opcodes.opDebugPrint:
@@ -498,8 +465,8 @@ namespace basic_script_interpreter
                             string msg = string.Empty;
 
 
-                            Register = _scopes.PopScopes(null);
-                            if (Register != null) { msg = Register.ToString(); }
+                            register = _scopes.PopScopes().value;
+                            if (register != null) { msg = register.ToString(); }
 
                             DebugPrint?.Invoke(msg);
 
@@ -534,11 +501,11 @@ namespace basic_script_interpreter
                             {
                                 string msg = string.Empty;
                                 int Type;
-                                Register = _scopes.PopScopes(null); // Message
-                                Akkumulator = _scopes.PopScopes(null); // Type
-                                Type = Convert.ToInt32(Akkumulator);
+                                register = _scopes.PopScopes().value; // Message
+                                akkumulator = _scopes.PopScopes().value; // Type
+                                Type = Convert.ToInt32(akkumulator);
 
-                                msg = Register.ToString();
+                                msg = register.ToString();
                                 Message?.Invoke(Type, msg);
                             }
                             catch (Exception ex)
@@ -557,8 +524,8 @@ namespace basic_script_interpreter
                                 ErrorObject.Raise((int)InterpreterError.runErrors.errNoUIallowed, "Code.Run", "MsgBox-Statement cannot be executed when no UI-elements are allowed", 0, 0, 0);
                             }
 
-                            Register = _scopes.PopScopes(null); // Title
-                            Akkumulator = _scopes.PopScopes(null); // Buttons
+                            register = _scopes.PopScopes().value; // Title
+                            akkumulator = _scopes.PopScopes().value; // Buttons
 
                             try
                             {
@@ -589,11 +556,11 @@ namespace basic_script_interpreter
                                 ErrorObject.Raise((int)InterpreterError.runErrors.errNoUIallowed, "Code.Run", "Inputbox-Statement cannot be executed when no UI-elements are allowed", 0, 0, 0);
                             }
 
-                            yPos = _scopes.PopScopes(null);
-                            xPos = _scopes.PopScopes(null);
-                            default_Renamed = _scopes.PopScopes(null);
-                            Register = _scopes.PopScopes(null);
-                            Akkumulator = _scopes.PopScopes(null);
+                            yPos = _scopes.PopScopes().value;
+                            xPos = _scopes.PopScopes().value;
+                            default_Renamed = _scopes.PopScopes().value;
+                            register = _scopes.PopScopes().value;
+                            akkumulator = _scopes.PopScopes().value;
 
                             try
                             {
@@ -618,35 +585,35 @@ namespace basic_script_interpreter
 
                     case Opcodes.opJumpTrue:
                         {
-                            Akkumulator = _scopes.PopScopes(null);
-                            if (Convert.ToBoolean(Akkumulator))
+                            akkumulator = _scopes.PopScopes().value;
+                            if (Convert.ToBoolean(akkumulator))
                                 _pc = Convert.ToInt32(operation.GetValue(1)) - 1;
                             break;
                         }
 
                     case Opcodes.opJumpFalse:
                         {
-                            Akkumulator = _scopes.PopScopes(null);
-                            if (!Convert.ToBoolean(Akkumulator))
+                            akkumulator = _scopes.PopScopes().value;
+                            if (!Convert.ToBoolean(akkumulator))
                                 _pc = Convert.ToInt32(operation.GetValue(1)) - 1;
                             break;
                         }
 
                     case Opcodes.opJumpPop:
                         {
-                            _pc = Convert.ToInt32(_scopes.PopScopes(null)) - 1;
+                            _pc = Convert.ToInt32(_scopes.PopScopes().value) - 1;
                             break;
                         }
 
                     case Opcodes.opPushScope:
                         {
-                            _scopes.Push(null);
+                            _scopes.PushScope();
                             break;
                         }
 
                     case Opcodes.opPopScope:
                         {
-                            _scopes.PopScopes(null);
+                            _scopes.PopScopes();
                             break;
                         }
 
@@ -675,19 +642,19 @@ namespace basic_script_interpreter
                 }
 
                 // Timeout erreicht?
-                if (CodeTimeout > 0 & (GetTickCount() - startTime) >= CodeTimeout)
-                {
-                    if (AllowUI)
-                        Timeout?.Invoke(continues);
+                //if (CodeTimeout > 0 & (GetTickCount() - startTime) >= CodeTimeout)
+                //{
+                //    if (AllowUI)
+                //        Timeout?.Invoke(continues);
 
-                    if (continues)
-                        startTime = GetTickCount(); // Timer wieder zurücksetzen und den nächsten Timeout abwarten
-                    else
-                    {
-                        _running = false;
-                        ErrorObject.Raise((int)InterpreterError.runErrors.errTimedOut, "Code.Run", "Timeout reached: code execution has been aborted", 0, 0, 0);
-                    }
-                }
+                //    if (continues)
+                //        startTime = GetTickCount(); // Timer wieder zurücksetzen und den nächsten Timeout abwarten
+                //    else
+                //    {
+                //        _running = false;
+                //        ErrorObject.Raise((int)InterpreterError.runErrors.errTimedOut, "Code.Run", "Timeout reached: code execution has been aborted", 0, 0, 0);
+                //    }
+                //}
             }
 
             _running = false;
@@ -706,8 +673,8 @@ namespace basic_script_interpreter
         private void binaryMathOperators(object[] operation, object akkumulator, object register)
         {
 
-            register = _scopes.PopScopes(null);
-            akkumulator = _scopes.PopScopes(null);
+            register = _scopes.PopScopes().value;
+            akkumulator = _scopes.PopScopes().value;
             if (register != null && akkumulator != null)
             {
                 try
@@ -987,9 +954,9 @@ namespace basic_script_interpreter
 
 
         }
-        private void unaryMathOperators(object[] operation, object Akkumulator, object register)
+        private void unaryMathOperators(object[] operation)
         {
-            Akkumulator = _scopes.PopScopes(null);
+            var akkumulator = _scopes.PopScopes().value;
 
             try
             {
@@ -997,44 +964,49 @@ namespace basic_script_interpreter
                 {
                     case Opcodes.opNegate:
                         {
-                            _scopes.Push(-Convert.ToDouble(Akkumulator));
+                            double number = Formathelper.FormatDoubleNumber(akkumulator.ToString());
+                            _scopes.Push(number * -1);
                             break;
                         }
 
                     case Opcodes.opNot:
                         {
-                            var tmp = Convert.ToBoolean(Akkumulator);
+                            var tmp = Convert.ToBoolean(akkumulator);
                             _scopes.Push(!tmp);
                             break;
                         }
 
                     case Opcodes.opFactorial:
                         {
-                            _scopes.Push(Factorial(Convert.ToInt32(Akkumulator)));
+                            _scopes.Push(Factorial(Convert.ToInt32(akkumulator)));
                             break;
                         }
 
                     case Opcodes.opSin:
                         {
-                            _scopes.Push(System.Math.Sin(Convert.ToDouble(Akkumulator)));
+                            double number = Formathelper.FormatDoubleNumber(akkumulator.ToString());
+                            _scopes.Push(System.Math.Sin(number));
                             break;
                         }
 
                     case Opcodes.opCos:
                         {
-                            _scopes.Push(System.Math.Cos(Convert.ToDouble(Akkumulator)));
+                            double number = Formathelper.FormatDoubleNumber(akkumulator.ToString());
+                            _scopes.Push(System.Math.Cos(number));
                             break;
                         }
 
                     case Opcodes.opTan:
                         {
-                            _scopes.Push(System.Math.Tan(Convert.ToDouble(Akkumulator)));
+                            double number = Formathelper.FormatDoubleNumber(akkumulator.ToString());
+                            _scopes.Push(System.Math.Tan(number));
                             break;
                         }
 
                     case Opcodes.opATan:
                         {
-                            _scopes.Push(System.Math.Atan(Convert.ToDouble(Akkumulator)));
+                            double number = Formathelper.FormatDoubleNumber(akkumulator.ToString());
+                            _scopes.Push(System.Math.Atan(number));
                             break;
                         }
                 }
