@@ -13,16 +13,16 @@ namespace basic_script_interpreter
 
         private Code.IInputStream _source; // Quelltext-Datenstrom
         private System.Collections.Generic.Dictionary<string, int> _predefinedIdentifiers;
-
-        // Liste der vordefinierten Identifier
-        private InterpreterError errorObject = new InterpreterError();
+        private InterpreterError errorObject;
 
 
-        public LexicalAnalyser Connect(Code.IInputStream source)
+        
+
+        public LexicalAnalyser Connect(Code.IInputStream source, InterpreterError errorObject)
         {
             _source = source;
+            this.errorObject = errorObject;
 
-            ErrorObject = errorObject;
             return this;
         }
 
@@ -341,11 +341,9 @@ namespace basic_script_interpreter
                     case "_":
                         symbolText = this.Identifier(nextSymbol, c);
                         break;
-                    case "'":
-                        // StringAbschlußzeichen ::= """ | "'"
-                        // Es muß dasselbe StringAbschlußzeichen am Anfang und Ende benutzt werden!
-                        // Ein doppeltes StringAbschlußzeichen wird reduziert auf ein einzelnes.
-                        var openChar = c;
+                    case "\"":
+                        
+                       
                         symbolText = "";
                         var endOfEmptyChar = false;
                         do
@@ -353,11 +351,11 @@ namespace basic_script_interpreter
                             c = _source.GetNextChar();
                             switch (c)
                             {
-                                case "'":
+                                case "\"":
                                     c = _source.GetNextChar();
-                                    if (c == openChar)
+                                    if (c == "\"")
                                     {
-                                        symbolText += openChar;
+                                        symbolText += "\"";
                                     }
                                     else
                                     {
@@ -371,20 +369,25 @@ namespace basic_script_interpreter
                                     errorObject.Raise((int)lexErrors.errUnexpectedEOL,
                                       "LexAnalyser.nextSymbol", "String not closed; unexpected end of line encountered",
                                       _source.Line, _source.Col, _source.Index);
+                                    endOfEmptyChar = true;
                                     break;
+
 
                                 case "":
                                     errorObject.Raise((int)lexErrors.errUnexpectedEOF,
                                       "LexAnalyser.nextSymbol", "String not closed; unexpected end of source",
                                        _source.Line, _source.Col, _source.Index);
+                                    endOfEmptyChar = true;
                                     break;
                                 default:
                                     symbolText = (symbolText + c);
+                                   
                                     break;
                             }
                         }
                         while (!endOfEmptyChar);
                         break;
+
                     case ":":
                         {
                             nextSymbol.Init(Symbol.Tokens.tokStatementDelimiter, c);
@@ -721,6 +724,18 @@ namespace basic_script_interpreter
             while (!breakLoop);
 
             return symbolText;
+        }
+
+        public void Dispose()
+        {
+            errorObject = null;
+            _source = null;
+
+        }
+
+        ~LexicalAnalyser()
+        {
+            Dispose();
         }
     }
 

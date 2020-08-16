@@ -44,7 +44,7 @@ namespace basic_script_interpreter
 
         public event MessageEventHandler Message;
 
-        public delegate void MessageEventHandler(int Type, string Message);
+        public delegate void MessageEventHandler(int type, string message);
 
         public interface IInputStream
         {
@@ -172,8 +172,10 @@ namespace basic_script_interpreter
 
             if (ErrorObject.Number == 0)
             {
+               
                 return true;
             }
+          
             return false;
         }
         //Code ausführen
@@ -281,7 +283,7 @@ namespace basic_script_interpreter
             Cancel = false;
             _running = true;
 
-            _pc = 1;
+            _pc = 0;
 
             bool accepted = false;
             bool continues = false;
@@ -642,19 +644,19 @@ namespace basic_script_interpreter
                 }
 
                 // Timeout erreicht?
-                //if (CodeTimeout > 0 & (GetTickCount() - startTime) >= CodeTimeout)
-                //{
-                //    if (AllowUI)
-                //        Timeout?.Invoke(continues);
+                if (CodeTimeout > 0 & (GetTickCount() - startTime) >= CodeTimeout)
+                {
+                    if (AllowUI)
+                        Timeout?.Invoke(continues);
 
-                //    if (continues)
-                //        startTime = GetTickCount(); // Timer wieder zurücksetzen und den nächsten Timeout abwarten
-                //    else
-                //    {
-                //        _running = false;
-                //        ErrorObject.Raise((int)InterpreterError.runErrors.errTimedOut, "Code.Run", "Timeout reached: code execution has been aborted", 0, 0, 0);
-                //    }
-                //}
+                    if (continues)
+                        startTime = GetTickCount(); // Timer wieder zurücksetzen und den nächsten Timeout abwarten
+                    else
+                    {
+                        _running = false;
+                        ErrorObject.Raise((int)InterpreterError.runErrors.errTimedOut, "Code.Run", "Timeout reached: code execution has been aborted", 0, 0, 0);
+                    }
+                }
             }
 
             _running = false;

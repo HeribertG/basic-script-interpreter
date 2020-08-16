@@ -40,24 +40,21 @@ namespace basic_script_interpreter
         // die zur Laufzeit nötigen Gültigkeitsbereiche
 
         private bool _optionExplicit; // müssen alle Identifier vor Benutzung explizit deklariert werden?
-
         private bool _allowExternal; // sollen EXTERNAL-Definitionen von Variablen erlaubt sein?
-
         private Code _code;
-
-        private InterpreterError errorObject = new InterpreterError();
+        private InterpreterError errorObject;
 
 
 
         public Code Parse(Code.IInputStream source, Code code, bool optionExplicit = true, bool allowExternal = true)
         {
-            _lex.Connect(source);
+            _lex.Connect(source, code.ErrorObject);
             // globalen und ersten Gültigkeitsbereich anlegen
             _symboltable = new Scopes();
             _symboltable.PushScope();
 
+            errorObject = code.ErrorObject;
             _code = code;
-
             _optionExplicit = optionExplicit;
             _allowExternal = allowExternal;
 
@@ -68,6 +65,12 @@ namespace basic_script_interpreter
 
             // --- Wurzelregel der Grammatik aufrufen und Syntaxanalyse starten
             StatementList(false, true, (int)Exits.exitNone, Symbol.Tokens.tokEOF);
+
+            if (errorObject.Number != 0)
+            {
+                return _code;
+            }
+
 
             // Wenn wir hier ankommen, dann muß der komplette Code korrekt erkannt
             // worden sein, d.h. es sind alle Symbole gelesen. Falls also nicht
@@ -104,8 +107,10 @@ namespace basic_script_interpreter
 
         private void StatementList(bool singleLineOnly, bool allowFunctionDeclarations, int exitsAllowed, params Symbol.Tokens[] endSymbols)
         {
+            var exitFunction = false;
             do
             {
+                if (errorObject.Number != 0) { return; }
                 // Anweisungstrenner (":" und Zeilenwechsel) überspringen
 
                 while (_sym.Token == Symbol.Tokens.tokStatementDelimiter)
@@ -120,11 +125,17 @@ namespace basic_script_interpreter
                 for (int i = 0; i <= endSymbols.Length - 1; i++)
                 {
                     if (_sym.Token == endSymbols[i])
+                    {
+                        exitFunction = true;
                         return;
+                    }
                 }
 
-                // Alles ok, die nächste Anweisung liegt an...
-                Statement(singleLineOnly, allowFunctionDeclarations, exitsAllowed);
+                if (!exitFunction)
+                {
+                    // Alles ok, die nächste Anweisung liegt an...
+                    Statement(singleLineOnly, allowFunctionDeclarations, exitsAllowed);
+                }
             }
             while (true);
         }
@@ -220,7 +231,7 @@ namespace basic_script_interpreter
                             case Symbol.Tokens.tokDO:
                                 {
                                     if (exitsAllowed + Exits.exitDo == Exits.exitDo)
-                                        // Code-Generation
+
                                         _code.Add(Code.Opcodes.opJumpPop); // Exit-Adresse liegt auf dem Stack
                                     else
                                         errorObject.Raise((int)InterpreterError.parsErrors.errUnexpectedSymbol, "SyntaxAnalyser.Statement", "'EXIT DO' not allowed at this point", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
@@ -230,7 +241,7 @@ namespace basic_script_interpreter
                             case Symbol.Tokens.tokFOR:
                                 {
                                     if ((Convert.ToByte(exitsAllowed) & Convert.ToByte(Exits.exitFor)) == Convert.ToByte(Exits.exitFor))
-                                        // Code-Generation
+
                                         _code.Add(Code.Opcodes.opJumpPop); // Exit-Adresse liegt auf dem Stack
                                     else
                                         errorObject.Raise((int)InterpreterError.parsErrors.errUnexpectedSymbol, "SyntaxAnalyser.Statement", "'EXIT FOR' not allowed at this point", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
@@ -240,7 +251,7 @@ namespace basic_script_interpreter
                             case Symbol.Tokens.tokSUB:
                                 {
                                     if ((Convert.ToByte(exitsAllowed) & Convert.ToByte(Exits.exitSub)) == Convert.ToByte(Exits.exitSub))
-                                        // Code-Generation
+
                                         // zum Ende der aktuellen Funktion spring
                                         _code.Add(Code.Opcodes.opReturn);
                                     else if ((Convert.ToByte(exitsAllowed) & Convert.ToByte(Exits.exitFunction)) == Convert.ToByte(Exits.exitFunction))
@@ -253,7 +264,7 @@ namespace basic_script_interpreter
                             case Symbol.Tokens.tokFUNCTION:
                                 {
                                     if ((Convert.ToByte(exitsAllowed) & Convert.ToByte(Exits.exitFunction)) == Convert.ToByte(Exits.exitFunction))
-                                        // Code-Generation
+
                                         _code.Add(Code.Opcodes.opReturn);
                                     else if ((Convert.ToByte(exitsAllowed) & +Convert.ToByte(Exits.exitSub)) == Convert.ToByte(Exits.exitSub))
                                         errorObject.Raise((int)InterpreterError.parsErrors.errUnexpectedSymbol, "SyntaxAnalyser.Statement", "Expected: 'EXIT SUB' in sub", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
@@ -277,16 +288,20 @@ namespace basic_script_interpreter
                     {
                         GetNextSymbol();
 
-                        ActualOptionalParameter("");
+                        if (errorObject.Number == 0)
+                        {
+                            ActualOptionalParameter("");
+                            _code.Add(Code.Opcodes.opDebugPrint);
 
-                        // Code-Generation
-                        _code.Add(Code.Opcodes.opDebugPrint);
+                        }
+
+
                         break;
                     }
 
                 case Symbol.Tokens.tokDebugClear:
                     {
-                        // Code-Generation
+
                         _code.Add(Code.Opcodes.opDebugClear);
 
                         GetNextSymbol();
@@ -295,7 +310,7 @@ namespace basic_script_interpreter
 
                 case Symbol.Tokens.tokDebugShow:
                     {
-                        // Code-Generation
+
                         _code.Add(Code.Opcodes.opDebugShow);
 
                         GetNextSymbol();
@@ -304,7 +319,7 @@ namespace basic_script_interpreter
 
                 case Symbol.Tokens.tokDebugHide:
                     {
-                        // Code-Generation
+
                         _code.Add(Code.Opcodes.opDebugHide);
 
                         GetNextSymbol();
@@ -329,7 +344,7 @@ namespace basic_script_interpreter
 
                 case Symbol.Tokens.tokDoEvents:
                     {
-                        // Code-Generation
+
                         _code.Add(Code.Opcodes.opDoEvents);
 
                         GetNextSymbol();
@@ -415,7 +430,7 @@ namespace basic_script_interpreter
 
                     if (_sym.Token == Symbol.Tokens.tokNumber | _sym.Token == Symbol.Tokens.tokString)
                     {
-                        // Code-Generation
+
                         _symboltable.Allocate(ident, _sym.Value, Identifier.IdentifierTypes.idConst);
                         _code.Add(Code.Opcodes.opAllocConst, ident, _sym.Value);
 
@@ -438,7 +453,7 @@ namespace basic_script_interpreter
             {
                 if (_sym.Token == Symbol.Tokens.tokIdentifier)
                 {
-                  
+
                     if (_symboltable.Exists(_sym.Text, true))
                         errorObject.Raise((int)InterpreterError.parsErrors.errIdentifierAlreadyExists, "VariableDeclaration", "Variable identifier '" + _sym.Text + "' is already declared", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
                     if (external)
@@ -502,7 +517,7 @@ namespace basic_script_interpreter
                         errorObject.Raise((int)InterpreterError.parsErrors.errSyntaxViolation, "SyntaxAnalyser.FunctionDefinition", "Expected: ',' or ')' or identifier", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
                 }
 
-                
+
                 // Funktion im aktuellen Scope definieren
                 definition = _symboltable.Allocate(ident, null, isSub == true ? Identifier.IdentifierTypes.idSub : Identifier.IdentifierTypes.idFunction);
                 _code.Add(Code.Opcodes.opAllocVar, ident); // Funktionsvariable anlegen
@@ -516,7 +531,7 @@ namespace basic_script_interpreter
 
                 // Formale Parameter als lokale Variablen der Funktion definieren
                 definition.formalParameters = formalParameters;
-                for (int i = 1; i <= formalParameters.Count(); i++)
+                for (int i = 0; i <= formalParameters.Count() - 1; i++)
                     _symboltable.Allocate(formalParameters[i].ToString(), null, Identifier.IdentifierTypes.idVariable);
 
                 // Funktionsrumpf übersetzen
@@ -568,7 +583,7 @@ namespace basic_script_interpreter
         GenerateEndFunctionCode:
             ;
 
-            // Code-Generation
+
             _symboltable.PopScopes(null); // lokalen Gültigkeitsbereich wieder verwerfen
 
             _code.Add(Code.Opcodes.opReturn);
@@ -603,7 +618,7 @@ namespace basic_script_interpreter
 
                     Condition(); // Startwert der FOR-Schleife
 
-                    // Code-Generation
+
                     // Startwert (auf dem Stack) der Zählervariablen zuweisen
                     _code.Add(Code.Opcodes.opAssign, counterVariable);
 
@@ -623,7 +638,7 @@ namespace basic_script_interpreter
                             // keine explizite Schrittweite, also default auf 1
                             _code.Add(Code.Opcodes.opPushValue, 1);
 
-                        // Code-Generation
+
                         // EXIT-Adresse auf Stack legen. Es ist wichtig, daß sie zuoberst liegt!
                         // Nur so kommen wir jederzeit an sie mit EXIT heran.
                         pushExitAddrPC = _code.Add(Code.Opcodes.opPushValue);
@@ -645,7 +660,7 @@ namespace basic_script_interpreter
                         else if (!thisFORisSingleLineOnly)
                             errorObject.Raise((int)InterpreterError.parsErrors.errSyntaxViolation, "SyntaxAnalyser.FORStatement", "Expected: 'NEXT' at end of FOR-statement", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
 
-                        // Code-Generation
+
                         // nach den Schleifenstatements wird die Zählervariable hochgezählt und
                         // geprüft, ob eine weitere Runde gedreht werden soll
 
@@ -682,14 +697,14 @@ namespace basic_script_interpreter
         private void DoStatement(bool singleLineOnly, int exitsAllowed)
         {
 
-            // Code-Generation
+
             int conditionPC = 0;
             int doPC;
             int pushExitAddrPC;
             bool thisDOisSingleLineOnly;
             bool doWhile = false;
 
-            // Code-Generation
+
             // EXIT-Adresse auf den Stack legen
 
             pushExitAddrPC = _code.Add(Code.Opcodes.opPushValue);
@@ -704,7 +719,7 @@ namespace basic_script_interpreter
 
                 Condition();
 
-                // Code-Generation
+
                 conditionPC = _code.Add(Code.Opcodes.opJumpFalse);
             }
 
@@ -735,7 +750,7 @@ namespace basic_script_interpreter
 
                             Condition();
 
-                            // Code-Generation
+
                             _code.Add(loopWhile == true ? Code.Opcodes.opJumpTrue : Code.Opcodes.opJumpFalse, doPC);
                             // Sprung zum Schleifenanf. wenn Bed. entsprechenden Wert hat
 
@@ -755,7 +770,7 @@ namespace basic_script_interpreter
 
                             Condition();
 
-                            // Code-Generation
+
                             _code.Add(loopWhile == true ? Code.Opcodes.opJumpTrue : Code.Opcodes.opJumpFalse, doPC);
                             // Sprung zum Schleifenanf. wenn Bed. entsprechenden Wert hat
 
@@ -767,7 +782,7 @@ namespace basic_script_interpreter
 
                     default:
                         {
-                            // Code-Generation
+
                             _code.Add(Code.Opcodes.opJump, doPC);
                             if (doWhile == true)
                                 _code.FixUp(conditionPC, _code.EndOfCodePC + 1);
@@ -804,7 +819,7 @@ namespace basic_script_interpreter
 
                 singleLineOnly = singleLineOnly | thisIFisSingleLineOnly;
 
-                // Code-Generation
+
                 thenPC = _code.Add(Code.Opcodes.opJumpFalse);
                 // Spring zum ELSE-Teil oder ans Ende
 
@@ -812,7 +827,7 @@ namespace basic_script_interpreter
 
                 if (_sym.Token == Symbol.Tokens.tokELSE)
                 {
-                    // Code-Generation
+
                     elsePC = _code.Add(Code.Opcodes.opJump); // Spring ans Ende
                     _code.FixUp(thenPC, elsePC + 1);
 
@@ -839,7 +854,7 @@ namespace basic_script_interpreter
             else
                 errorObject.Raise((int)InterpreterError.parsErrors.errSyntaxViolation, "SyntaxAnalyser.IFStatement", "THEN missing after IF", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
 
-            // Code-Generation
+
             if (elsePC == 0)
                 _code.FixUp(thenPC, _code.EndOfCodePC + 1);
             else
@@ -859,7 +874,7 @@ namespace basic_script_interpreter
                 GetNextSymbol();
                 ConditionalTerm();
 
-                // Code-Generation
+
                 _code.Add(Code.Opcodes.opOr);
             }
         }
@@ -875,7 +890,7 @@ namespace basic_script_interpreter
 
             while (InSymbolSet(_sym.Token, Symbol.Tokens.tokAND))
             {
-                // Code-Generation
+
                 operandPCs.Add(_code.Add(Code.Opcodes.opJumpFalse));
 
                 GetNextSymbol();
@@ -885,7 +900,7 @@ namespace basic_script_interpreter
             int thenPC;
             if (operandPCs.Count() > 0)
             {
-                // Code-Generation
+
                 operandPCs.Add(_code.Add(Code.Opcodes.opJumpFalse));
 
                 // wenn wir hier ankommen, dann sind alle AND-Operanden TRUE
@@ -920,7 +935,7 @@ namespace basic_script_interpreter
 
                 Expression();
 
-                // Code-Generation
+
                 switch (operator_Renamed)
                 {
                     case Symbol.Tokens.tokEq:
@@ -977,7 +992,7 @@ namespace basic_script_interpreter
                 GetNextSymbol();
                 Term();
 
-                // Code-Generation
+
                 switch (operator_Renamed)
                 {
                     case Symbol.Tokens.tokPlus:
@@ -1022,7 +1037,7 @@ namespace basic_script_interpreter
                 GetNextSymbol();
                 Factor();
 
-                // Code-Generation
+
                 switch (operator_Renamed)
                 {
                     case Symbol.Tokens.tokMultiplication:
@@ -1058,7 +1073,7 @@ namespace basic_script_interpreter
 
                 Factorial();
 
-                // Code-Generation
+
                 _code.Add(Code.Opcodes.opPower);
             }
         }
@@ -1072,7 +1087,7 @@ namespace basic_script_interpreter
 
             if (_sym.Token == Symbol.Tokens.tokFactorial)
             {
-                // Code-Generation
+
                 _code.Add(Code.Opcodes.opFactorial);
 
                 GetNextSymbol();
@@ -1094,7 +1109,7 @@ namespace basic_script_interpreter
 
                         Terminal();
 
-                        // Code-Generation
+
                         _code.Add(Code.Opcodes.opNegate);
                         break;
                     }
@@ -1106,14 +1121,14 @@ namespace basic_script_interpreter
 
                         Terminal();
 
-                        // Code-Generation
+
                         _code.Add(Code.Opcodes.opNot);
                         break;
                     }
 
                 case Symbol.Tokens.tokNumber:
                     {
-                        // Code-Generation
+
                         _code.Add(Code.Opcodes.opPushValue, _sym.Value);
 
                         GetNextSymbol();
@@ -1121,7 +1136,7 @@ namespace basic_script_interpreter
                     }
                 case Symbol.Tokens.tokString:
                     {
-                        // Code-Generation
+
                         _code.Add(Code.Opcodes.opPushValue, _sym.Value);
 
                         GetNextSymbol();
@@ -1153,7 +1168,7 @@ namespace basic_script_interpreter
                         else
                         {
                             // Wert einer Variablen bzw. Konstante auf den Stack legen
-                            // Code-Generation
+
                             _code.Add(Code.Opcodes.opPushVariable, _sym.Text);
                             GetNextSymbol();
                         }
@@ -1163,7 +1178,7 @@ namespace basic_script_interpreter
 
                 case Symbol.Tokens.tokTrue:
                     {
-                        // Code-Generation
+
                         _code.Add(Code.Opcodes.opPushValue, true);
                         GetNextSymbol();
                         break;
@@ -1171,7 +1186,7 @@ namespace basic_script_interpreter
 
                 case Symbol.Tokens.tokFalse:
                     {
-                        // Code-Generation
+
                         _code.Add(Code.Opcodes.opPushValue, false);
                         GetNextSymbol();
                         break;
@@ -1179,7 +1194,7 @@ namespace basic_script_interpreter
 
                 case Symbol.Tokens.tokPI:
                     {
-                        // Code-Generation
+
                         _code.Add(Code.Opcodes.opPushValue, 3.141592654);
                         GetNextSymbol();
                         break;
@@ -1187,7 +1202,7 @@ namespace basic_script_interpreter
 
                 case Symbol.Tokens.tokCrlf:
                     {
-                        // Code-Generation
+
                         _code.Add(Code.Opcodes.opPushValue, "\r\n");
                         GetNextSymbol();
                         break;
@@ -1195,7 +1210,7 @@ namespace basic_script_interpreter
 
                 case Symbol.Tokens.tokTab:
                     {
-                        // Code-Generation
+
                         _code.Add(Code.Opcodes.opPushValue, "\t");
                         GetNextSymbol();
                         break;
@@ -1203,7 +1218,7 @@ namespace basic_script_interpreter
 
                 case Symbol.Tokens.tokCr:
                     {
-                        // Code-Generation
+
                         _code.Add(Code.Opcodes.opPushValue, "\r");
                         GetNextSymbol();
                         break;
@@ -1211,7 +1226,7 @@ namespace basic_script_interpreter
 
                 case Symbol.Tokens.tokLf:
                     {
-                        // Code-Generation
+
                         _code.Add(Code.Opcodes.opPushValue, "\n");
                         GetNextSymbol();
                         break;
@@ -1249,7 +1264,7 @@ namespace basic_script_interpreter
 
                             Condition();
 
-                            // Code-Generation
+
                             thenPC = _code.Add(Code.Opcodes.opJumpFalse);
 
                             if (_sym.Token == Symbol.Tokens.tokComma)
@@ -1258,7 +1273,7 @@ namespace basic_script_interpreter
 
                                 Condition(); // true Value
 
-                                // Code-Generation
+
                                 elsePC = _code.Add(Code.Opcodes.opJump);
                                 _code.FixUp(thenPC, _code.EndOfCodePC + 1);
 
@@ -1268,7 +1283,7 @@ namespace basic_script_interpreter
 
                                     Condition(); // false Value
 
-                                    // Code-Generation
+
                                     _code.FixUp(elsePC, _code.EndOfCodePC + 1);
 
                                     if (_sym.Token == Symbol.Tokens.tokRightParent)
@@ -1320,7 +1335,7 @@ namespace basic_script_interpreter
         {
             ActualOptionalParameter(0);
             ActualOptionalParameter("");
-            // Code-Generation
+
             _code.Add(Code.Opcodes.opMessage);
 
             if (dropReturnValue)
@@ -1334,7 +1349,7 @@ namespace basic_script_interpreter
             ActualOptionalParameter(0);
             ActualOptionalParameter("");
 
-            // Code-Generation
+
             _code.Add(Code.Opcodes.opMsgbox);
 
             if (dropReturnValue)
@@ -1379,7 +1394,7 @@ namespace basic_script_interpreter
             bool requireRightParent = false;
 
             // Identifier überhaupt als Funktion definiert?
-            if (!_symboltable.Exists(ident, null/* Conversion error: Set to default value for this argument */, Identifier.IdentifierTypes.idSub | Identifier.IdentifierTypes.idFunction))
+            if (!_symboltable.Exists(ident, null, Identifier.IdentifierTypes.idSubOfFunction))
                 errorObject.Raise((int)InterpreterError.parsErrors.errIdentifierAlreadyExists, "Statement", "Function/Sub '" + ident + "' not declared", _sym.Line, _sym.Col, _sym.Index, ident);
 
             if (_sym.Token == Symbol.Tokens.tokLeftParent)
@@ -1393,7 +1408,7 @@ namespace basic_script_interpreter
             definition = _symboltable.Retrieve(ident);
 
             // --- Function-Scope vorbereiten
-            // Code-Generation
+
             // Neuen Scope für die Funktion öffnen
             _code.Add(Code.Opcodes.opPushScope);
 
@@ -1408,24 +1423,24 @@ namespace basic_script_interpreter
                 // Funktion mit Parametern: Parameter { "," Parameter }
                 do
                 {
-                    n++;
-                    if (n > definition.formalParameters.Count)
-                        break;
-                    if (n > 1)
-                        GetNextSymbol();
+                    if (n > definition.formalParameters.Count-1) { break; }
+                    if (n > 0) { GetNextSymbol(); }
+                       
                     Condition();
+
+                    n++;
                 }
-                while (_sym.Token == Symbol.Tokens.tokComma)// wir standen noch auf dem "," nach dem vorhergehenden Parameter // Wert des n-ten Parameters auf den Stack legen
-    ;
+                // wir standen noch auf dem "," nach dem vorhergehenden Parameter // Wert des n-ten Parameters auf den Stack legen
+                while (_sym.Token == Symbol.Tokens.tokComma);
 
             // Wurde die richtige Anzahl Parameter übergeben?
             if (definition.formalParameters.Count != n)
                 errorObject.Raise((int)InterpreterError.parsErrors.errWrongNumberOfParams, "SyntaxAnalyser.Statement", "Wrong number of parameters in call to function '" + ident + "' (" + definition.formalParameters.Count + " expected but " + n + " found)", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
 
-            // Code-Generation
+
             // Formale Parameter als lokale Variablen der Funktion definieren und zuweisen
             // (in umgekehrter Reihenfolge, weil die Werte so auf dem Stack liegen)
-            for (i = definition.formalParameters.Count; i >= 1; i += -1)
+            for (i = definition.formalParameters.Count-1; i >= 0; i += -1)
             {
                 _code.Add(Code.Opcodes.opAllocVar, definition.formalParameters[i]);
                 _code.Add(Code.Opcodes.opAssign, definition.formalParameters[i]);
@@ -1439,7 +1454,7 @@ namespace basic_script_interpreter
                     errorObject.Raise((int)InterpreterError.parsErrors.errUnexpectedSymbol, "SyntaxAnalyser.Statement", "Expected: ')' after function parameters", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
             }
 
-            // Code-Generation
+
             // --- Funktion rufen
             _code.Add(Code.Opcodes.opCall, definition.address);
 
@@ -1617,7 +1632,7 @@ namespace basic_script_interpreter
                 {
                     GetNextSymbol();
 
-                    // Code-Generation
+
                     switch (operator_Renamed)
                     {
                         case Symbol.Tokens.tokSin:
@@ -1652,6 +1667,16 @@ namespace basic_script_interpreter
                 errorObject.Raise((int)InterpreterError.parsErrors.errMissingLeftParent, "SyntaxAnalyser.Terminal", "Missing opening bracket '(' after function name", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
 
             return operator_Renamed;
+        }
+
+        public void Dispose()
+        {
+            errorObject = null;
+        }
+
+        ~SyntaxAnalyser()
+        {
+            Dispose();
         }
     }
 }
