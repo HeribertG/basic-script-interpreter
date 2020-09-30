@@ -18,7 +18,7 @@ namespace basic_script_interpreter
             public Code.IInputStream Connect(string sourcetext)
             {
                
-                _sourcetext = sourcetext;
+                _sourcetext = sourcetext + " " ;
                 Index = 0;
 
                 Line = 1; Col = 0;
@@ -59,7 +59,7 @@ namespace basic_script_interpreter
                 Index++;
 
                 string nextChar = string.Empty;
-                if (Index <= _sourcetext.Length)
+                if (Index < _sourcetext.Length)
                 {
                     nextChar = _sourcetext.Substring(Index - 1, 1);
                     Col++;

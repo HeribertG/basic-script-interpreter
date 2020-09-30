@@ -5,13 +5,6 @@ using System.Linq;
 
 namespace basic_script_interpreter
 {
-    // -----------------------------------------------------------------
-    // Copyright © 2011 Heribert Gasparoli
-    // -----------------------------------------------------------------
-    // 
-    // Stand: 01/2011
-    // 
-    // -----------------------------------------------------------------
 
     // SyntaxAnalyser: Führt die Syntaxanalyser durch, erzeugt
     // aber auch den Code. Der Parser steuert den ganzen Übersetzungsprozeß.
@@ -524,7 +517,7 @@ namespace basic_script_interpreter
 
                 // in der sequentiellen Codeausführung die Funktion überspringen
                 skipFunctionPC = _code.Add(Code.Opcodes.opJump);
-                definition.address = _code.EndOfCodePC + 1;
+                definition.address = _code.EndOfCodePC;
 
                 // Neuen Scope für die Funktion öffnen
                 _symboltable.PushScope();
@@ -581,14 +574,12 @@ namespace basic_script_interpreter
             return;
 
         GenerateEndFunctionCode:
-            ;
-
 
             _symboltable.PopScopes(null); // lokalen Gültigkeitsbereich wieder verwerfen
 
             _code.Add(Code.Opcodes.opReturn);
 
-            _code.FixUp(skipFunctionPC, _code.EndOfCodePC + 1);
+            _code.FixUp(skipFunctionPC - 1, _code.EndOfCodePC);
         }
 
 
@@ -605,7 +596,7 @@ namespace basic_script_interpreter
             {
                 int forPC, pushExitAddrPC;
                 bool thisFORisSingleLineOnly;
-                if (_optionExplicit & !_symboltable.Exists(_sym.Text, null/* Conversion error: Set to default value for this argument */, Identifier.IdentifierTypes.idVariable))
+                if (_optionExplicit & !_symboltable.Exists(_sym.Text, null, Identifier.IdentifierTypes.idVariable))
                     errorObject.Raise((int)InterpreterError.parsErrors.errIdentifierAlreadyExists, "SyntaxAnalyser.FORStatement", "Variable '" + _sym.Text + "' not declared", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
 
                 counterVariable = _sym.Text;
@@ -644,7 +635,7 @@ namespace basic_script_interpreter
                         pushExitAddrPC = _code.Add(Code.Opcodes.opPushValue);
 
                         // hier gehen endlich die Statements innerhalb der Schleife los
-                        forPC = _code.EndOfCodePC + 1;
+                        forPC = _code.EndOfCodePC;
 
                         thisFORisSingleLineOnly = !(_sym.Token == Symbol.Tokens.tokStatementDelimiter & _sym.Text == "\n");
                         if (_sym.Token == Symbol.Tokens.tokStatementDelimiter)
@@ -678,7 +669,7 @@ namespace basic_script_interpreter
 
                         // Stack bereinigen von allen durch FOR darauf zwischengespeicherten Werten
                         _code.Add(Code.Opcodes.opPop); // Exit-Adresse vom Stack entfernen
-                        _code.FixUp(pushExitAddrPC, _code.EndOfCodePC + 1); // Adresse setzen, zu der EXIT springen soll
+                        _code.FixUp(pushExitAddrPC - 1, _code.EndOfCodePC); // Adresse setzen, zu der EXIT springen soll
                         _code.Add(Code.Opcodes.opPop); // Schrittweite
                         _code.Add(Code.Opcodes.opPop); // Endwert
                     }
@@ -709,7 +700,7 @@ namespace basic_script_interpreter
 
             pushExitAddrPC = _code.Add(Code.Opcodes.opPushValue);
 
-            doPC = _code.EndOfCodePC + 1;
+            doPC = _code.EndOfCodePC;
 
             if (_sym.Token == Symbol.Tokens.tokWHILE)
             {
@@ -756,7 +747,7 @@ namespace basic_script_interpreter
 
                             _code.Add(Code.Opcodes.opPop); // Exit-Adresse vom Stack entfernen
 
-                            _code.FixUp(pushExitAddrPC, _code.EndOfCodePC + 1); // Adresse setzen, zu der EXIT springen soll
+                            _code.FixUp(pushExitAddrPC - 1, _code.EndOfCodePC); // Adresse setzen, zu der EXIT springen soll
                             break;
                         }
                     case Symbol.Tokens.tokUNTIL:
@@ -776,7 +767,7 @@ namespace basic_script_interpreter
 
                             _code.Add(Code.Opcodes.opPop); // Exit-Adresse vom Stack entfernen
 
-                            _code.FixUp(pushExitAddrPC, _code.EndOfCodePC + 1); // Adresse setzen, zu der EXIT springen soll
+                            _code.FixUp(pushExitAddrPC - 1, _code.EndOfCodePC); // Adresse setzen, zu der EXIT springen soll
                             break;
                         }
 
@@ -785,11 +776,11 @@ namespace basic_script_interpreter
 
                             _code.Add(Code.Opcodes.opJump, doPC);
                             if (doWhile == true)
-                                _code.FixUp(conditionPC, _code.EndOfCodePC + 1);
+                                _code.FixUp(conditionPC - 1, _code.EndOfCodePC);
 
                             _code.Add(Code.Opcodes.opPop); // Exit-Adresse vom Stack entfernen, sie wurde ja nicht benutzt
 
-                            _code.FixUp(pushExitAddrPC, _code.EndOfCodePC + 1); // Adresse setzen, zu der EXIT springen soll
+                            _code.FixUp(pushExitAddrPC - 1, _code.EndOfCodePC); // Adresse setzen, zu der EXIT springen soll
                             break;
                         }
                 }
@@ -813,7 +804,7 @@ namespace basic_script_interpreter
             {
                 GetNextSymbol();
 
-                thisIFisSingleLineOnly = !(_sym.Token == Symbol.Tokens.tokStatementDelimiter & _sym.Text == "\r\n");
+                thisIFisSingleLineOnly = !(_sym.Token == Symbol.Tokens.tokStatementDelimiter & _sym.Text == "\n");
                 if (_sym.Token == Symbol.Tokens.tokStatementDelimiter)
                     GetNextSymbol();
 
@@ -829,7 +820,7 @@ namespace basic_script_interpreter
                 {
 
                     elsePC = _code.Add(Code.Opcodes.opJump); // Spring ans Ende
-                    _code.FixUp(thenPC, elsePC + 1);
+                    _code.FixUp(thenPC - 1, elsePC);
 
                     GetNextSymbol();
 
@@ -856,9 +847,9 @@ namespace basic_script_interpreter
 
 
             if (elsePC == 0)
-                _code.FixUp(thenPC, _code.EndOfCodePC + 1);
+                _code.FixUp(thenPC - 1, _code.EndOfCodePC);
             else
-                _code.FixUp(elsePC, _code.EndOfCodePC + 1);
+                _code.FixUp(elsePC - 1, _code.EndOfCodePC);
         }
 
 
@@ -912,10 +903,10 @@ namespace basic_script_interpreter
                 // Alle Sprünge von Operandentests hierher umleiten, da
                 // sie ja FALSE ergeben haben
                 for (int i = 1; i <= operandPCs.Count(); i++)
-                    _code.FixUp(Convert.ToInt32(operandPCs[i]), _code.EndOfCodePC + 1);
+                    _code.FixUp(Convert.ToInt32(operandPCs[i]) - 1, _code.EndOfCodePC);
                 _code.Add(Code.Opcodes.opPushValue, false); // also dieses Ergebnis auch auf den Stack legen
 
-                _code.FixUp(thenPC, _code.EndOfCodePC + 1);
+                _code.FixUp(thenPC, _code.EndOfCodePC);
             }
         }
 
@@ -1236,7 +1227,9 @@ namespace basic_script_interpreter
                     operator_Renamed = Boxes(_sym.Token);
                     break;
                 case Symbol.Tokens.tokInputbox:
-                    operator_Renamed = Boxes(_sym.Token);
+                    CallInputbox(false);
+                    GetNextSymbol();
+                    //operator_Renamed = Boxes(_sym.Token);
                     break;
                 case Symbol.Tokens.tokMessage:
                     operator_Renamed = Boxes(_sym.Token);
@@ -1275,7 +1268,7 @@ namespace basic_script_interpreter
 
 
                                 elsePC = _code.Add(Code.Opcodes.opJump);
-                                _code.FixUp(thenPC, _code.EndOfCodePC + 1);
+                                _code.FixUp(thenPC - 1, _code.EndOfCodePC);
 
                                 if (_sym.Token == Symbol.Tokens.tokComma)
                                 {
@@ -1284,7 +1277,7 @@ namespace basic_script_interpreter
                                     Condition(); // false Value
 
 
-                                    _code.FixUp(elsePC, _code.EndOfCodePC + 1);
+                                    _code.FixUp(elsePC - 1, _code.EndOfCodePC);
 
                                     if (_sym.Token == Symbol.Tokens.tokRightParent)
                                         GetNextSymbol();
@@ -1423,9 +1416,9 @@ namespace basic_script_interpreter
                 // Funktion mit Parametern: Parameter { "," Parameter }
                 do
                 {
-                    if (n > definition.formalParameters.Count-1) { break; }
+                    if (n > definition.formalParameters.Count - 1) { break; }
                     if (n > 0) { GetNextSymbol(); }
-                       
+
                     Condition();
 
                     n++;
@@ -1440,7 +1433,7 @@ namespace basic_script_interpreter
 
             // Formale Parameter als lokale Variablen der Funktion definieren und zuweisen
             // (in umgekehrter Reihenfolge, weil die Werte so auf dem Stack liegen)
-            for (i = definition.formalParameters.Count-1; i >= 0; i += -1)
+            for (i = definition.formalParameters.Count - 1; i >= 0; i += -1)
             {
                 _code.Add(Code.Opcodes.opAllocVar, definition.formalParameters[i]);
                 _code.Add(Code.Opcodes.opAssign, definition.formalParameters[i]);
@@ -1519,61 +1512,6 @@ namespace basic_script_interpreter
             _code.Add(Code.Opcodes.opAssign, Ident);
 
         }
-
-        //private void statementComparativeOperators(string Ident)
-        //{
-
-        //    var op = _sym.Token;
-
-        //    // Check, ob Zielvariable bereits existiert
-        //    if (_symboltable.Exists(Ident, null, Identifier.IdentifierTypes.idConst))
-        //        errorObject.Raise((int)InterpreterError.parsErrors.errIdentifierAlreadyExists, "Statement", "Assignment to constant '" + Ident + "' not allowed", _sym.Line, _sym.Col, _sym.Index, Ident);
-
-        //    if (_optionExplicit & !_symboltable.Exists(Ident, null, ()(Identifier.IdentifierTypes.idVariable | Identifier.IdentifierTypes.idFunction)))
-        //        errorObject.Raise((int)InterpreterError.parsErrors.errIdentifierAlreadyExists, "Statement", "Variable/Function '" + Ident + "' not declared", _sym.Line, _sym.Col, _sym.Index, Ident);
-
-
-        //    if (op != Symbol.Tokens.tokEq)
-        //        // Names der Variablen als 1. Operanden auf den Stack
-        //        _code.Add(Code.Opcodes.opPushVariable, Ident);
-
-        //    GetNextSymbol();
-
-        //    Condition();
-
-
-        //    // verschiedene Zuweisungsoperatoren unterscheiden
-        //    switch (op)
-        //    {
-        //        case Symbol.Tokens.tokPlusEq:
-        //            _code.Add(Code.Opcodes.opAdd);
-        //            break;
-        //        case Symbol.Tokens.tokMinusEq:
-        //            _code.Add(Code.Opcodes.opSub);
-        //            break;
-        //        case Symbol.Tokens.tokMultiplicationEq:
-
-        //            _code.Add(Code.Opcodes.opMultiplication);
-        //            break;
-        //        case Symbol.Tokens.tokDivisionEq:
-
-        //            _code.Add(Code.Opcodes.opDivision);
-        //            break;
-        //        case Symbol.Tokens.tokStringConcatEq:
-        //            _code.Add(Code.Opcodes.opStringConcat);
-        //            break;
-
-        //        case Symbol.Tokens.tokDivEq:
-        //            _code.Add(Code.Opcodes.opDiv);
-        //            break;
-        //        case Symbol.Tokens.tokModEq:
-        //            _code.Add(Code.Opcodes.opMod);
-        //            break;
-
-        //    }
-
-        //    _code.Add(Code.Opcodes.opAssign, Ident);
-        //}
 
         private Symbol.Tokens Boxes(Symbol.Tokens operator_Renamed)
         {
@@ -1668,6 +1606,8 @@ namespace basic_script_interpreter
 
             return operator_Renamed;
         }
+
+        
 
         public void Dispose()
         {

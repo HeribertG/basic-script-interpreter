@@ -136,7 +136,7 @@ namespace basic_script_interpreter
                 // Eine Stackwert vom Stacktop aus gezählt (0..n) zurückliefern, der Stack
                 // bleibt aber wie er ist
 
-                pop = _variables[_variables.Count() - index];
+                pop = _variables[_variables.Count()-1 - index];
 
             return pop;
         }

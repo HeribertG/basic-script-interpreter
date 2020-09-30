@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.Xml.Schema;
 
@@ -24,7 +25,7 @@ namespace basic_script_interpreter
         public static bool IsNumericDouble(object value)
         {
             double result = 0;
-            if (double.TryParse(value.ToString(), out result))
+            if (double.TryParse(value.ToString(), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out result))
             {
                 return true;
             }
