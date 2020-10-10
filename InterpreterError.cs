@@ -1,5 +1,5 @@
 ﻿
-namespace basic_script_interpreter
+namespace Basic_Script_Interpreter
 {
     // InterpreterError: Fehler-Objekt für alle Klasse der myScript-Engine
     // Über Raise() werden die Fehlerparameter gesetzt und ein VB-Fehler
@@ -48,94 +48,40 @@ namespace basic_script_interpreter
             errUnknownVar = OBJECTERROR + 66
         }
 
-        private int _number; // Fehlercode
-        private string _source; // Fehlermeldende Routine
-        private string _description; // Fehlermeldung
-        private int _line; // Code-Zeile
-        private int _col; // Code-Spalte
-        private int _Index; // Code-Index
+       
 
-        private string _ErrSource; // Fehlerhaftes Symbol bzw. Code-Ausschnitt
-
-        public void Raise(int Number, string source, string Description, int Line, int Col, int Index, string ErrSource = "")
+        public void Raise(int number, string source, string description, int line, int col, int index, string errSource = "")
         {
-            _number = Number;
-            _source = source;
-            _description = Description;
-            _line = Line;
-            _col = Col;
-            _Index = Index;
-            _ErrSource = ErrSource;
+            Number = number;
+            Source = source;
+            Description = description;
+            Line = line;
+            Col = col;
+            Index = index;
+            ErrSource = errSource;
 
         }
 
         public void Clear()
         {
-            _number = 0;
-            _source = string.Empty;
-            _description = string.Empty;
-            _line = 0;
-            _col = 0;
-            _Index = 0;
-            _ErrSource = string.Empty;
+            Number = 0;
+            Source = string.Empty;
+            Description = string.Empty;
+            Line = 0;
+            Col = 0;
+            Index = 0;
+            ErrSource = string.Empty;
         }
 
-        // ----------------------------------------------------------------------------------------------------------------
-        public int Index
-        {
-            get
-            {
-                return _Index;
-            }
-        }
+  
+        public int Index { get; private set; }
+        public int Number { get; private set; }
+        public string Source { get; private set; }
+        public string Description { get; private set; }
+        public int Line { get; private set; }
+        public int Col { get; private set; }
+        public string ErrSource { get; private set; }
 
-        public int Number
-        {
-            get
-            {
-                return _number;
-            }
-        }
-
-        public string source
-        {
-            get
-            {
-                return _source;
-            }
-        }
-
-        public string Description
-        {
-            get
-            {
-                return _description;
-            }
-        }
-
-        public int Line
-        {
-            get
-            {
-                return _line;
-            }
-        }
-
-        public int Col
-        {
-            get
-            {
-                return _col;
-            }
-        }
-
-        public string ErrSource
-        {
-            get
-            {
-                return _ErrSource;
-            }
-        }
     }
 
 

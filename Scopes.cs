@@ -2,15 +2,15 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using static basic_script_interpreter.Identifier;
+using static Basic_Script_Interpreter.Identifier;
 
 
 // Das jeweils zuoberst liegende Scope-Objekt dient dabei als
 // normaler Programm-Stack.
 //
-// Variablen _symboltable (SyntaxAnalyser.cls) und _scopes (Code.cls)
+// Variablen _symboltable (SyntaxAnalyser.cls) und scopes (Code.cls)
 // sind Scopes-Objekte.
-namespace basic_script_interpreter
+namespace Basic_Script_Interpreter
 {
 
     public class Scopes
@@ -51,7 +51,7 @@ namespace basic_script_interpreter
         public void Assign(string name, object value)
         {
             var vari = getVariable(name);
-            vari.value = value;
+            vari.Value = value;
         }
 
         // dito, jedoch Wert zurückliefern (als kompletten Identifier)
@@ -73,11 +73,11 @@ namespace basic_script_interpreter
             for (i = _scopes.Count() - 1; i >= n; i += -1)
             {
                 s = _scopes[i];
-                renamed = (Identifier)s.getVariable(name);
+                renamed = (Identifier)s.GetVariable(name);
 
                 if (renamed != null)
                 {
-                    if (renamed.name == name)
+                    if (renamed.Name == name)
                     {
                         // Prüfen, ob gefundener Wert vom gewünschten Typ ist
                         if (idType == IdentifierTypes.idNone)
@@ -86,42 +86,42 @@ namespace basic_script_interpreter
                         {
                             if (idType == IdentifierTypes.idIsVariableOfFunction)
                             {
-                                if (renamed.idType == IdentifierTypes.idVariable || renamed.idType == IdentifierTypes.idFunction)
+                                if (renamed.IdType == IdentifierTypes.idVariable || renamed.IdType == IdentifierTypes.idFunction)
                                 {
                                     result = true;
                                 }
                             }
                             else if (idType == IdentifierTypes.idSubOfFunction)
                             {
-                                if (renamed.idType == IdentifierTypes.idSub || renamed.idType == IdentifierTypes.idFunction)
+                                if (renamed.IdType == IdentifierTypes.idSub || renamed.IdType == IdentifierTypes.idFunction)
                                 {
                                     result = true;
                                 }
                             }
                             else if (idType == IdentifierTypes.idFunction)
                             {
-                                if (renamed.idType == IdentifierTypes.idSub || renamed.idType == IdentifierTypes.idFunction)
+                                if (renamed.IdType == IdentifierTypes.idSub || renamed.IdType == IdentifierTypes.idFunction)
                                 {
                                     result = true;
                                 }
                             }
                             else if (idType == IdentifierTypes.idFunction)
                             {
-                                if (renamed.idType == IdentifierTypes.idFunction)
+                                if (renamed.IdType == IdentifierTypes.idFunction)
                                 {
                                     result = true;
                                 }
                             }
                             else if (idType == IdentifierTypes.idSub)
                             {
-                                if (renamed.idType == IdentifierTypes.idSub)
+                                if (renamed.IdType == IdentifierTypes.idSub)
                                 {
                                     result = true;
                                 }
                             }
                             else if (idType == IdentifierTypes.idVariable)
                             {
-                                if (renamed.idType == IdentifierTypes.idVariable)
+                                if (renamed.IdType == IdentifierTypes.idVariable)
                                 {
                                     result = true;
                                 }
@@ -145,7 +145,7 @@ namespace basic_script_interpreter
             {
                 Scope s = _scopes[_scopes.Count() - 1];
                 var c = new Identifier();
-                c.value = value;
+                c.Value = value;
                 s.Push(c);
             }
         }
@@ -176,7 +176,7 @@ namespace basic_script_interpreter
                 for (int i = _scopes.Count - 1; i >= 0; i += -1)
                 {
                     s = _scopes[i];
-                    x = (Identifier)s.getVariable(name);
+                    x = (Identifier)s.GetVariable(name);
                     if (x != null)
                         return x;
                 }

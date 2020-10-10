@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 
-namespace basic_script_interpreter
+namespace Basic_Script_Interpreter
 {
 
     // SyntaxAnalyser: Führt die Syntaxanalyser durch, erzeugt
@@ -430,7 +430,7 @@ namespace basic_script_interpreter
                         GetNextSymbol();
                     }
                     else
-                        errorObject.Raise((int)InterpreterError.parsErrors.errUnexpectedSymbol, "SyntaxAnalyser.ConstDeclaration", "Expected: const value", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
+                        errorObject.Raise((int)InterpreterError.parsErrors.errUnexpectedSymbol, "SyntaxAnalyser.ConstDeclaration", "Expected: const Value", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
                 }
                 else
                     errorObject.Raise((int)InterpreterError.parsErrors.errUnexpectedSymbol, "SyntaxAnalyser.ConstDeclaration", "Expected: '=' after const identifier", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
@@ -517,13 +517,13 @@ namespace basic_script_interpreter
 
                 // in der sequentiellen Codeausführung die Funktion überspringen
                 skipFunctionPC = _code.Add(Code.Opcodes.opJump);
-                definition.address = _code.EndOfCodePC;
+                definition.Address = _code.EndOfCodePC;
 
                 // Neuen Scope für die Funktion öffnen
                 _symboltable.PushScope();
 
                 // Formale Parameter als lokale Variablen der Funktion definieren
-                definition.formalParameters = formalParameters;
+                definition.FormalParameters = formalParameters;
                 for (int i = 0; i <= formalParameters.Count() - 1; i++)
                     _symboltable.Allocate(formalParameters[i].ToString(), null, Identifier.IdentifierTypes.idVariable);
 
@@ -569,7 +569,7 @@ namespace basic_script_interpreter
                     errorObject.Raise((int)InterpreterError.parsErrors.errSyntaxViolation, "SyntaxAnalyser.FunctionDefinition", "Expected: 'END FUNCTION'/'ENDFUNCTION', 'END SUB'/'ENDSUB' at end of function body", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
             }
             else
-                errorObject.Raise((int)InterpreterError.parsErrors.errSyntaxViolation, "SyntaxAnalyser.FunctionDefinition", "Function/Sub name is missing in definition", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
+                errorObject.Raise((int)InterpreterError.parsErrors.errSyntaxViolation, "SyntaxAnalyser.FunctionDefinition", "Function/Sub Name is missing in definition", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
 
             return;
 
@@ -583,7 +583,7 @@ namespace basic_script_interpreter
         }
 
 
-        // FORStatement ::= "FOR" variable "=" value "TO" [ "STEP" value ] value Statementlist "NEXT"
+        // FORStatement ::= "FOR" variable "=" Value "TO" [ "STEP" Value ] Value Statementlist "NEXT"
         // (Achtung: bei FOR, DO, IF kann die Anweisung entweder über mehrere Zeilen laufen
         // und muß dann mit einem entsprechenden Endesymbol abgeschlossen sein (NEXT, END IF usw.). Oder
         // sie umfaßt nur 1 Zeile und bedarf keines Abschlusses! Daher der Aufwand mit
@@ -674,7 +674,7 @@ namespace basic_script_interpreter
                         _code.Add(Code.Opcodes.opPop); // Endwert
                     }
                     else
-                        errorObject.Raise((int)InterpreterError.parsErrors.errSyntaxViolation, "SyntaxAnalyser.FORStatement", "Expected: 'TO' after start value of FOR-statement", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
+                        errorObject.Raise((int)InterpreterError.parsErrors.errSyntaxViolation, "SyntaxAnalyser.FORStatement", "Expected: 'TO' after start Value of FOR-statement", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
                 }
                 else
                     errorObject.Raise((int)InterpreterError.parsErrors.errSyntaxViolation, "SyntaxAnalyser.FORStatement", "Expected: '=' after counter variable", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
@@ -1285,7 +1285,7 @@ namespace basic_script_interpreter
                                         errorObject.Raise((int)InterpreterError.parsErrors.errMissingClosingParent, "SyntaxAnalyser.Terminal", "Missing closing bracket ')' after last IIF-parameter", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
                                 }
                                 else
-                                    errorObject.Raise((int)InterpreterError.parsErrors.errMissingComma, "SyntaxAnalyser.Terminal", "Missing ',' after true-value of IIF", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
+                                    errorObject.Raise((int)InterpreterError.parsErrors.errMissingComma, "SyntaxAnalyser.Terminal", "Missing ',' after true-Value of IIF", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
                             }
                             else
                                 errorObject.Raise((int)InterpreterError.parsErrors.errMissingComma, "SyntaxAnalyser.Terminal", "Missing ',' after IIF-condition", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
@@ -1416,7 +1416,7 @@ namespace basic_script_interpreter
                 // Funktion mit Parametern: Parameter { "," Parameter }
                 do
                 {
-                    if (n > definition.formalParameters.Count - 1) { break; }
+                    if (n > definition.FormalParameters.Count - 1) { break; }
                     if (n > 0) { GetNextSymbol(); }
 
                     Condition();
@@ -1427,16 +1427,16 @@ namespace basic_script_interpreter
                 while (_sym.Token == Symbol.Tokens.tokComma);
 
             // Wurde die richtige Anzahl Parameter übergeben?
-            if (definition.formalParameters.Count != n)
-                errorObject.Raise((int)InterpreterError.parsErrors.errWrongNumberOfParams, "SyntaxAnalyser.Statement", "Wrong number of parameters in call to function '" + ident + "' (" + definition.formalParameters.Count + " expected but " + n + " found)", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
+            if (definition.FormalParameters.Count != n)
+                errorObject.Raise((int)InterpreterError.parsErrors.errWrongNumberOfParams, "SyntaxAnalyser.Statement", "Wrong number of parameters in call to function '" + ident + "' (" + definition.FormalParameters.Count + " expected but " + n + " found)", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
 
 
             // Formale Parameter als lokale Variablen der Funktion definieren und zuweisen
             // (in umgekehrter Reihenfolge, weil die Werte so auf dem Stack liegen)
-            for (i = definition.formalParameters.Count - 1; i >= 0; i += -1)
+            for (i = definition.FormalParameters.Count - 1; i >= 0; i += -1)
             {
-                _code.Add(Code.Opcodes.opAllocVar, definition.formalParameters[i]);
-                _code.Add(Code.Opcodes.opAssign, definition.formalParameters[i]);
+                _code.Add(Code.Opcodes.opAllocVar, definition.FormalParameters[i]);
+                _code.Add(Code.Opcodes.opAssign, definition.FormalParameters[i]);
             }
 
             if (requireRightParent)
@@ -1449,7 +1449,7 @@ namespace basic_script_interpreter
 
 
             // --- Funktion rufen
-            _code.Add(Code.Opcodes.opCall, definition.address);
+            _code.Add(Code.Opcodes.opCall, definition.Address);
 
             // --- Scopes aufräumen
             _code.Add(Code.Opcodes.opPopScope);
@@ -1602,7 +1602,7 @@ namespace basic_script_interpreter
                     errorObject.Raise((int)InterpreterError.parsErrors.errMissingClosingParent, "SyntaxAnalyser.Terminal", "Missing closing bracket ')' after function parameter", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
             }
             else
-                errorObject.Raise((int)InterpreterError.parsErrors.errMissingLeftParent, "SyntaxAnalyser.Terminal", "Missing opening bracket '(' after function name", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
+                errorObject.Raise((int)InterpreterError.parsErrors.errMissingLeftParent, "SyntaxAnalyser.Terminal", "Missing opening bracket '(' after function Name", _sym.Line, _sym.Col, _sym.Index, _sym.Text);
 
             return operator_Renamed;
         }

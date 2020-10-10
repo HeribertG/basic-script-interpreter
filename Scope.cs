@@ -20,25 +20,25 @@ using System.Linq;
 ///  einen eigenen Namensraum, in welchem alle benannten Werte
 ///  unterschiedliche Namen haben müssen. Werte in unterschiedlichen
 ///  Scope-Objekten können gleich sein.
-namespace basic_script_interpreter
+namespace Basic_Script_Interpreter
 {
 
     public class Scope
     {
-        private Collection<Identifier> _variables = new Collection<Identifier>();
+        private Collection<Identifier> Variables = new Collection<Identifier>();
 
 
         public Identifier Allocate(string name, object value = null, Identifier.IdentifierTypes idType = Identifier.IdentifierTypes.idVariable)
         {
             Identifier id = new Identifier()
             {
-                name = name,
-                value = value,
-                idType = idType
+                Name = name,
+                Value = value,
+                IdType = idType
             };
 
 
-            setVariable(id, name);
+            SetVariable(id, name);
 
             return id;
         }
@@ -46,27 +46,27 @@ namespace basic_script_interpreter
 
         public void Assign(string name, object value)
         {
-            setVariable(value, name);
+            SetVariable(value, name);
         }
 
 
         public object Retrieve(string name)
         {
-            return getVariable(name);
+            return GetVariable(name);
         }
 
 
         public bool Exists(string name)
         {
-            return getVariable(name) != null;
+            return GetVariable(name) != null;
         }
 
 
-        public object getVariable(string name)
+        public object GetVariable(string name)
         {
             try
             {
-                return _variables.Where(x => ((Identifier)x).name == name).FirstOrDefault();
+                return Variables.Where(x => ((Identifier)x).Name == name).FirstOrDefault();
 
             }
             catch (Exception)
@@ -75,13 +75,13 @@ namespace basic_script_interpreter
             }
         }
 
-        public void setVariable(object value, string name)
+        public void SetVariable(object value, string name)
         {
             // Benannten Wert löschen , damit es ersetzt wird
-            if (this._variables.Count > 0)
+            if (this.Variables.Count > 0)
             {
-                var tmp = _variables.Where(x => ((Identifier)x).name == name).FirstOrDefault();
-                if (tmp != null) { _variables.Remove(tmp); }
+                var tmp = Variables.Where(x => ((Identifier)x).Name == name).FirstOrDefault();
+                if (tmp != null) { Variables.Remove(tmp); }
             }
 
             // Variablen immer am Anfang des Scopes zusammenhalten. Nach der letzten
@@ -95,19 +95,19 @@ namespace basic_script_interpreter
             else
             {
                 c = new Identifier();
-                c.name = name;
-                c.value = value;
+                c.Name = name;
+                c.Value = value;
             }
          
-            if (_variables.Count == 0) { _variables.Add(c); }
-            else { _variables.Insert(0, c); }
+            if (Variables.Count == 0) { Variables.Add(c); }
+            else { Variables.Insert(0, c); }
 
         }
 
 
         public void Push(Identifier value)
         {
-            _variables.Add(value);
+            Variables.Add(value);
         }
 
 
@@ -124,8 +124,8 @@ namespace basic_script_interpreter
                 // Die Stackwerte fangen nach der letzten benannten Variablen im Scope an
                 try
                 {
-                    pop = _variables[_variables.Count() - 1];
-                    _variables.Remove(pop);
+                    pop = Variables[Variables.Count() - 1];
+                    Variables.Remove(pop);
                 }
                 catch (Exception ex)
                 {
@@ -136,19 +136,19 @@ namespace basic_script_interpreter
                 // Eine Stackwert vom Stacktop aus gezählt (0..n) zurückliefern, der Stack
                 // bleibt aber wie er ist
 
-                pop = _variables[_variables.Count()-1 - index];
+                pop = Variables[Variables.Count()-1 - index];
 
             return pop;
         }
 
         internal int CloneCount()
         {
-            return _variables.Count();
+            return Variables.Count();
         }
 
         public object CloneItem(int Index)
         {
-            return _variables[Index];
+            return Variables[Index];
         }
     }
 

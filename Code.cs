@@ -1,9 +1,9 @@
-﻿using basic_script_interpreter.Macro.Process;
+﻿using Basic_Script_Interpreter.Macro.Process;
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
 
-namespace basic_script_interpreter
+namespace Basic_Script_Interpreter
 {
     public class Code : IDisposable
     {
@@ -142,12 +142,12 @@ namespace basic_script_interpreter
         // -------------------------------
         // LOKALE VARIABLEN (VerweisTypen)
         // -------------------------------
-        private Collection<object> _code = new Collection<object>(); // jeder Item ist eine komplette Anweisung mit evtl. Parametern
+        private Collection<object> code = new Collection<object>(); // jeder Item ist eine komplette Anweisung mit evtl. Parametern
 
-        private Scopes _scopes;
-        private int _pc; // Program Counter = zeigt auf aktuelle Anweisung in _code
-        private Scope _external = new Scope();
-        private bool _running; // wird noch code ausgeführt?
+        private Scopes scopes;
+        private int pc; // Program Counter = zeigt auf aktuelle Anweisung in code
+        private Scope external = new Scope();
+        private bool running; // wird noch code ausgeführt?
 
 
         [System.Runtime.InteropServices.DllImport("kernel32")]
@@ -165,7 +165,7 @@ namespace basic_script_interpreter
             var parser = new SyntaxAnalyser(ErrorObject);
 
 
-            _code = new Collection<object>();
+            code = new Collection<object>();
 
             parser.Parse(sourceStream.Connect(source), this, optionExplicit, allowExternal);
 
@@ -197,44 +197,44 @@ namespace basic_script_interpreter
         {
             get
             {
-                return _code.Count;
+                return code.Count;
             }
         }  //Befehlszählerstand der aktuell letzten Anweisung
         public Identifier ImportAdd(string name, object value = null, Identifier.IdentifierTypes idType = Identifier.IdentifierTypes.idVariable
                                      )
         {
-            return _external.Allocate(name, value, idType);
+            return external.Allocate(name, value, idType);
         }
         public void ImportItem(string name, object value = null)
         {
-            _external.Assign(name, value);
+            external.Assign(name, value);
         }
         public void ImportClear() //Globalen Gültigkeitsbereich löschen
         {
-            _external = new Scope();
+            external = new Scope();
         }
         public object ImportRead(string name)
         {
-            return _external.Retrieve(name);
+            return external.Retrieve(name);
         }
         internal Scope External()
         {
-            return _external;
+            return external;
         }
         public Code Clone()
         {
             var clone = new Code();
-            for (int i = 1; i <= _code.Count; i++)
-                clone.CloneAdd(_code[i]);
+            for (int i = 1; i <= code.Count; i++)
+                clone.CloneAdd(code[i]);
 
-            for (int i = 1; i <= _external.CloneCount(); i++)
+            for (int i = 1; i <= external.CloneCount(); i++)
 
-                clone.ImportAdd(((Identifier)_external.CloneItem(i)).name);
+                clone.ImportAdd(((Identifier)external.CloneItem(i)).Name);
             return clone;
         }
         internal void CloneAdd(object Value)
         {
-            _code.Add(Value);
+            code.Add(Value);
         }
         internal int Add(Opcodes opCode, params object[] parameters)
         {
@@ -244,25 +244,25 @@ namespace basic_script_interpreter
             for (int i = 0; i <= parameters.Length - 1; i++)
                 operation[i + 1] = parameters[i];
 
-            _code.Add(operation);
+            code.Add(operation);
 
-            return _code.Count;
+            return code.Count;
         }
         internal void FixUp(int index, params object[] parameters)
         {
             object[] operation = new object[parameters.Length + 1];
-            var  tmp = (object[])_code[index];
+            var  tmp = (object[])code[index];
             operation[0] = tmp[0];
 
             for (int i = 0; i <= parameters.Length - 1; i++)
                 operation[i + 1] = parameters[i];
 
-            _code.RemoveAt(index);
+            code.RemoveAt(index);
 
-            if (index > _code.Count)
-                _code.Add(operation);
+            if (index > code.Count)
+                code.Add(operation);
             else
-                _code.Insert(index, operation);
+                code.Insert(index, operation);
         }
 
 
@@ -274,25 +274,25 @@ namespace basic_script_interpreter
 
             int startTime;
 
-            _scopes = new Scopes();
-            _scopes.PushScope(_external);
-            _scopes.PushScope();
+            scopes = new Scopes();
+            scopes.PushScope(external);
+            scopes.PushScope();
 
             startTime = GetTickCount();
             Cancel = false;
-            _running = true;
+            running = true;
 
-            _pc = 0;
+            pc = 0;
 
             bool accepted = false;
             bool continues = false;
             object xPos, default_Renamed, yPos;
-            while ((_pc <= _code.Count - 1) & _running)
+            while ((pc <= code.Count - 1) & running)
             {
                 akkumulator = null;
                 register = null;
 
-                operation = (Object[])_code[_pc];
+                operation = (Object[])code[pc];
 
                 switch ((Opcodes)operation.GetValue(0))
                 {
@@ -300,21 +300,21 @@ namespace basic_script_interpreter
                     case Opcodes.opAllocConst:
                         {
                             // Parameter:    Name der Konstanten; Wert
-                            _scopes.Allocate(operation.GetValue(1).ToString(), operation.GetValue(2).ToString(), Identifier.IdentifierTypes.idConst);
+                            scopes.Allocate(operation.GetValue(1).ToString(), operation.GetValue(2).ToString(), Identifier.IdentifierTypes.idConst);
                             break;
                         }
                     // Variable allozieren
                     case Opcodes.opAllocVar:
                         {
                             // Parameter:    Name der Variablen
-                            _scopes.Allocate(operation.GetValue(1).ToString());
+                            scopes.Allocate(operation.GetValue(1).ToString());
                             break;
                         }
                     // Wert auf den Stack schieben
                     case Opcodes.opPushValue:
                         {
                             // Parameter:    Wert
-                            _scopes.Push(operation.GetValue(1));
+                            scopes.Push(operation.GetValue(1));
                             break;
                         }
                     // Wert einer Variablen auf den Stack schieben
@@ -324,8 +324,8 @@ namespace basic_script_interpreter
                             Identifier tmp =null;
                             try
                             {
-                                tmp = _scopes.Retrieve(operation.GetValue(1).ToString());
-                                register = tmp.value;
+                                tmp = scopes.Retrieve(operation.GetValue(1).ToString());
+                                register = tmp.Value;
                             }
                             catch (Exception)
                             {
@@ -338,18 +338,18 @@ namespace basic_script_interpreter
                                     // sie aber nicht, da sie hier auf sie sofort lesend zugegriffen
                                     // würde
 
-                                    _running = false;
+                                    running = false;
                                     ErrorObject.Raise((int)InterpreterError.runErrors.errUnknownVar, "Code.Run", "Unknown variable '" + operation.GetValue(1).ToString() + "'", 0, 0, 0);
                                 }
                             }
 
                             if (tmp ==null)
                             {
-                                _running = false;
-                                ErrorObject.Raise((int)InterpreterError.runErrors.errUninitializedVar, "Code.Run", "Variable '" + operation.GetValue(1).ToString() + "' not hasn´t been assigned a value yet", 0, 0, 0);
+                                running = false;
+                                ErrorObject.Raise((int)InterpreterError.runErrors.errUninitializedVar, "Code.Run", "Variable '" + operation.GetValue(1).ToString() + "' not hasn´t been assigned a Value yet", 0, 0, 0);
                             } else
                             {
-                            _scopes.Push(register);
+                            scopes.Push(register);
 
                             }
 
@@ -358,7 +358,7 @@ namespace basic_script_interpreter
                     // entfernt obersten Wert vom Stack
                     case Opcodes.opPop:
                         {
-                            _scopes.PopScopes();
+                            scopes.PopScopes();
                             break;
                         }
                     // legt den n-ten Stackwert zuoberst auf den Stack
@@ -366,9 +366,9 @@ namespace basic_script_interpreter
                         {
                             // Parameter:    Index in den Stack (von oben an gezählt: 0..n)
                             object result = null;
-                            register = _scopes.Pop(Convert.ToInt32(operation.GetValue(1)));
-                            if (register is Identifier) { result = ((Identifier)register).value; } else { result = register; }
-                            _scopes.Push(result);
+                            register = scopes.Pop(Convert.ToInt32(operation.GetValue(1)));
+                            if (register is Identifier) { result = ((Identifier)register).Value; } else { result = register; }
+                            scopes.Push(result);
                             break;
                         }
                     // Wert auf dem Stack einer Variablen zuweisen
@@ -379,9 +379,9 @@ namespace basic_script_interpreter
                             try
                             {
                                 object result = null;
-                                register = _scopes.Pop();
-                                if (register is Identifier) { result = ((Identifier)register).value; } else { result = register; }
-                                _scopes.Assign(operation.GetValue(1).ToString(), result);
+                                register = scopes.Pop();
+                                if (register is Identifier) { result = ((Identifier)register).Value; } else { result = register; }
+                                scopes.Assign(operation.GetValue(1).ToString(), result);
                             }
                             catch (Exception)
                             {
@@ -391,81 +391,81 @@ namespace basic_script_interpreter
                                 if (!accepted)
                                     // Host hat nicht mit Var am Hut, dann legen wir
                                     // sie eben selbst an
-                                    _scopes.Allocate(operation.GetValue(1).ToString(), register.ToString());
+                                    scopes.Allocate(operation.GetValue(1).ToString(), register.ToString());
                             }
 
                             break;
                         }
 
                     case Opcodes.opAdd:
-                        binaryMathOperators(operation, akkumulator, register);
+                        BinaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opSub:
-                        binaryMathOperators(operation, akkumulator, register);
+                        BinaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opMultiplication:
-                        binaryMathOperators(operation, akkumulator, register);
+                        BinaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opDivision:
-                        binaryMathOperators(operation, akkumulator, register);
+                        BinaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opDiv:
-                        binaryMathOperators(operation, akkumulator, register);
+                        BinaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opMod:
-                        binaryMathOperators(operation, akkumulator, register);
+                        BinaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opPower:
-                        binaryMathOperators(operation, akkumulator, register);
+                        BinaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opStringConcat:
-                        binaryMathOperators(operation, akkumulator, register);
+                        BinaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opOr:
-                        binaryMathOperators(operation, akkumulator, register);
+                        BinaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opAnd:
-                        binaryMathOperators(operation, akkumulator, register);
+                        BinaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opEq:
-                        binaryMathOperators(operation, akkumulator, register);
+                        BinaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opNotEq:
-                        binaryMathOperators(operation, akkumulator, register);
+                        BinaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.oplt:
-                        binaryMathOperators(operation, akkumulator, register);
+                        BinaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opLEq:
-                        binaryMathOperators(operation, akkumulator, register);
+                        BinaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opGt:
-                        binaryMathOperators(operation, akkumulator, register);
+                        BinaryMathOperators(operation, akkumulator, register);
                         break;
                     case Opcodes.opGEq:
-                        binaryMathOperators(operation, akkumulator, register);
+                        BinaryMathOperators(operation, akkumulator, register);
                         break;
 
                     case Opcodes.opNegate:
-                        unaryMathOperators(operation);
+                        UnaryMathOperators(operation);
                         break;
                     case Opcodes.opNot:
-                        unaryMathOperators(operation);
+                        UnaryMathOperators(operation);
                         break;
                     case Opcodes.opFactorial:
-                        unaryMathOperators(operation);
+                        UnaryMathOperators(operation);
                         break;
                     case Opcodes.opSin:
-                        unaryMathOperators(operation);
+                        UnaryMathOperators(operation);
                         break;
                     case Opcodes.opCos:
-                        unaryMathOperators(operation);
+                        UnaryMathOperators(operation);
                         break;
                     case Opcodes.opTan:
-                        unaryMathOperators(operation);
+                        UnaryMathOperators(operation);
                         break;
                     case Opcodes.opATan:
-                        unaryMathOperators(operation);
+                        UnaryMathOperators(operation);
                         break;
 
                     case Opcodes.opDebugPrint:
@@ -474,7 +474,7 @@ namespace basic_script_interpreter
                             string msg = string.Empty;
 
 
-                            register = _scopes.PopScopes().value;
+                            register = scopes.PopScopes().Value;
                             if (register != null) { msg = register.ToString(); }
 
                             DebugPrint?.Invoke(msg);
@@ -510,8 +510,8 @@ namespace basic_script_interpreter
                             {
                                 string msg = string.Empty;
                                 int Type;
-                                register = _scopes.PopScopes().value; // Message
-                                akkumulator = _scopes.PopScopes().value; // Type
+                                register = scopes.PopScopes().Value; // Message
+                                akkumulator = scopes.PopScopes().Value; // Type
                                 Type = Convert.ToInt32(akkumulator);
 
                                 msg = register.ToString();
@@ -529,22 +529,22 @@ namespace basic_script_interpreter
                         {
                             if (!AllowUI)
                             {
-                                _running = false;
+                                running = false;
                                 ErrorObject.Raise((int)InterpreterError.runErrors.errNoUIallowed, "Code.Run", "MsgBox-Statement cannot be executed when no UI-elements are allowed", 0, 0, 0);
                             }
 
-                            register = _scopes.PopScopes().value; // Title
-                            akkumulator = _scopes.PopScopes().value; // Buttons
+                            register = scopes.PopScopes().Value; // Title
+                            akkumulator = scopes.PopScopes().Value; // Buttons
 
                             try
                             {
 
-                                // TODO:InputBox  // _scopes.Push(MsgBox(_scopes.Pop, (MsgBoxStyle)Akkumulator.ToString(), Register));
+                                // TODO:InputBox  // scopes.Push(MsgBox(scopes.Pop, (MsgBoxStyle)Akkumulator.ToString(), Register));
                             }
                             catch (Exception ex)
                             {
 
-                                _running = false;
+                                running = false;
                                 ErrorObject.Raise((int)InterpreterError.runErrors.errMath, "Code.Run", "Error during MsgBox-call: " + ex.HResult + " (" + ex.Message + ")", 0, 0, 0);
                             }
 
@@ -561,25 +561,25 @@ namespace basic_script_interpreter
                         {
                             if (!AllowUI)
                             {
-                                _running = false;
+                                running = false;
                                 ErrorObject.Raise((int)InterpreterError.runErrors.errNoUIallowed, "Code.Run", "Inputbox-Statement cannot be executed when no UI-elements are allowed", 0, 0, 0);
                             }
 
-                            yPos = _scopes.PopScopes().value;
-                            xPos = _scopes.PopScopes().value;
-                            default_Renamed = _scopes.PopScopes().value;
-                            register = _scopes.PopScopes().value;
-                            akkumulator = _scopes.PopScopes().value;
+                            yPos = scopes.PopScopes().Value;
+                            xPos = scopes.PopScopes().Value;
+                            default_Renamed = scopes.PopScopes().Value;
+                            register = scopes.PopScopes().Value;
+                            akkumulator = scopes.PopScopes().Value;
 
                             try
                             {
                                 // TODO:InputBox
                                 //string Anwert = Microsoft.VisualBasic.Interaction.InputBox(Akkumulator.ToString(), Register.ToString(), default_Renamed.ToString(), Convert.ToInt32(xPos), Convert.ToInt32(yPos));
-                                //_scopes.Push(Anwert);
+                                //scopes.Push(Anwert);
                             }
                             catch (Exception ex)
                             {
-                                _running = false;
+                                running = false;
                                 ErrorObject.Raise((int)InterpreterError.runErrors.errMath, "Code.Run", "Error during MsgBox-call: " + ex.HResult + " (" + ex.Message + ")", 0, 0, 0);
                             }
 
@@ -588,65 +588,65 @@ namespace basic_script_interpreter
 
                     case Opcodes.opJump:
                         {
-                            _pc = Convert.ToInt32(operation.GetValue(1)) - 1;
+                            pc = Convert.ToInt32(operation.GetValue(1)) - 1;
                             break;
                         }
 
                     case Opcodes.opJumpTrue:
                         {
-                            akkumulator = _scopes.PopScopes().value;
+                            akkumulator = scopes.PopScopes().Value;
                             if (Convert.ToBoolean(akkumulator))
-                                _pc = Convert.ToInt32(operation.GetValue(1)) - 1;
+                                pc = Convert.ToInt32(operation.GetValue(1)) - 1;
                             break;
                         }
 
                     case Opcodes.opJumpFalse:
                         {
-                            akkumulator = _scopes.PopScopes().value;
+                            akkumulator = scopes.PopScopes().Value;
                             if (!Convert.ToBoolean(akkumulator))
-                                _pc = Convert.ToInt32(operation.GetValue(1)) - 1;
+                                pc = Convert.ToInt32(operation.GetValue(1)) - 1;
                             break;
                         }
 
                     case Opcodes.opJumpPop:
                         {
-                            _pc = Convert.ToInt32(_scopes.PopScopes().value) - 1;
+                            pc = Convert.ToInt32(scopes.PopScopes().Value) - 1;
                             break;
                         }
 
                     case Opcodes.opPushScope:
                         {
-                            _scopes.PushScope();
+                            scopes.PushScope();
                             break;
                         }
 
                     case Opcodes.opPopScope:
                         {
-                            _scopes.PopScopes();
+                            scopes.PopScopes();
                             break;
                         }
 
                     case Opcodes.opCall:
                         {
-                            _scopes.Allocate("~RETURNADDR", (_pc + 1).ToString(), Identifier.IdentifierTypes.idConst);
-                            _pc = Convert.ToInt32(operation.GetValue(1)) - 1;
+                            scopes.Allocate("~RETURNADDR", (pc + 1).ToString(), Identifier.IdentifierTypes.idConst);
+                            pc = Convert.ToInt32(operation.GetValue(1)) - 1;
                             break;
                         }
 
                     case Opcodes.opReturn:
                         {
-                            _pc = Convert.ToInt32(Convert.ToDouble(_scopes.Retrieve("~RETURNADDR").value, CultureInfo.InvariantCulture) - 1);
+                            pc = Convert.ToInt32(Convert.ToDouble(scopes.Retrieve("~RETURNADDR").Value, CultureInfo.InvariantCulture) - 1);
                             break;
                         }
                 }
 
 
-                _pc = _pc + 1; // zum nächsten Befehl
+                pc = pc + 1; // zum nächsten Befehl
 
                 // wurde Interpretation unterbrochen?
                 if (Cancel)
                 {
-                    _running = false;
+                    running = false;
                     ErrorObject.Raise((int)InterpreterError.runErrors.errCancelled, "Code.Run", "Code execution aborted", 0, 0, 0);
                 }
 
@@ -660,13 +660,13 @@ namespace basic_script_interpreter
                 //        startTime = GetTickCount(); // Timer wieder zurücksetzen und den nächsten Timeout abwarten
                 //    else
                 //    {
-                //        _running = false;
+                //        running = false;
                 //        ErrorObject.Raise((int)InterpreterError.runErrors.errTimedOut, "Code.Run", "Timeout reached: code execution has been aborted", 0, 0, 0);
                 //    }
                 //}
             }
 
-            _running = false;
+            running = false;
         }
 
 
@@ -679,11 +679,11 @@ namespace basic_script_interpreter
                 return n * Factorial(n - 1);
         }
 
-        private void binaryMathOperators(object[] operation, object akkumulator, object register)
+        private void BinaryMathOperators(object[] operation, object akkumulator, object register)
         {
 
-            register = _scopes.PopScopes().value;
-            akkumulator = _scopes.PopScopes().value;
+            register = scopes.PopScopes().Value;
+            akkumulator = scopes.PopScopes().Value;
             if (register != null && akkumulator != null)
             {
                 try
@@ -695,15 +695,15 @@ namespace basic_script_interpreter
                                 double TmpAk = 0.0D;
                                 if (akkumulator.GetType() == typeof(Identifier))
                                  
-                                    TmpAk = Convert.ToDouble(((Identifier)akkumulator).value, CultureInfo.InvariantCulture);
+                                    TmpAk = Convert.ToDouble(((Identifier)akkumulator).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(akkumulator))
                                     TmpAk = Convert.ToDouble(akkumulator, CultureInfo.InvariantCulture);
                                 double TmpReg = 0.0D;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToDouble(((Identifier)akkumulator).value, CultureInfo.InvariantCulture);
+                                    TmpReg = Convert.ToDouble(((Identifier)akkumulator).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(register))
                                     TmpReg = Convert.ToDouble(register, CultureInfo.InvariantCulture);
-                                _scopes.Push(TmpAk + TmpReg);
+                                scopes.Push(TmpAk + TmpReg);
                                 break;
                             }
 
@@ -711,15 +711,15 @@ namespace basic_script_interpreter
                             {
                                 double TmpAk = 0.0D;
                                 if (akkumulator.GetType() == typeof(Identifier))
-                                    TmpAk = Convert.ToDouble(((Identifier)akkumulator).value, CultureInfo.InvariantCulture);
+                                    TmpAk = Convert.ToDouble(((Identifier)akkumulator).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(akkumulator))
                                     TmpAk = Convert.ToDouble(akkumulator, CultureInfo.InvariantCulture);
                                 double TmpReg = 0.0D;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToDouble(((Identifier)akkumulator).value, CultureInfo.InvariantCulture);
+                                    TmpReg = Convert.ToDouble(((Identifier)akkumulator).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(register))
                                     TmpReg = Convert.ToDouble(register, CultureInfo.InvariantCulture);
-                                _scopes.Push(TmpAk - TmpReg);
+                                scopes.Push(TmpAk - TmpReg);
                                 break;
                             }
 
@@ -727,15 +727,15 @@ namespace basic_script_interpreter
                             {
                                 double TmpAk = 0.0D;
                                 if (akkumulator.GetType() == typeof(Identifier))
-                                    TmpAk = Convert.ToDouble(((Identifier)akkumulator).value, CultureInfo.InvariantCulture);
+                                    TmpAk = Convert.ToDouble(((Identifier)akkumulator).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(akkumulator))
                                     TmpAk = Convert.ToDouble(akkumulator, CultureInfo.InvariantCulture);
                                 double TmpReg = 0.0D;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToDouble((((Identifier)register)).value, CultureInfo.InvariantCulture);
+                                    TmpReg = Convert.ToDouble((((Identifier)register)).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(register))
                                     TmpReg = Convert.ToDouble(register, CultureInfo.InvariantCulture);
-                                _scopes.Push(Convert.ToDouble(TmpAk, CultureInfo.InvariantCulture) * Convert.ToDouble(TmpReg, CultureInfo.InvariantCulture));
+                                scopes.Push(Convert.ToDouble(TmpAk, CultureInfo.InvariantCulture) * Convert.ToDouble(TmpReg, CultureInfo.InvariantCulture));
                                 break;
                             }
 
@@ -743,15 +743,15 @@ namespace basic_script_interpreter
                             {
                                 double TmpAk = 0.0D;
                                 if (akkumulator.GetType() == typeof(Identifier))
-                                    TmpAk = Convert.ToDouble(((Identifier)akkumulator).value, CultureInfo.InvariantCulture);
+                                    TmpAk = Convert.ToDouble(((Identifier)akkumulator).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(akkumulator))
                                     TmpAk = Convert.ToDouble(akkumulator, CultureInfo.InvariantCulture);
                                 double TmpReg = 0.0D;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToDouble(((Identifier)register).value, CultureInfo.InvariantCulture);
+                                    TmpReg = Convert.ToDouble(((Identifier)register).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(register))
                                     TmpReg = Convert.ToDouble(register, CultureInfo.InvariantCulture);
-                                _scopes.Push(Convert.ToDouble(TmpAk, CultureInfo.InvariantCulture) / Convert.ToDouble(TmpReg, CultureInfo.InvariantCulture));
+                                scopes.Push(Convert.ToDouble(TmpAk, CultureInfo.InvariantCulture) / Convert.ToDouble(TmpReg, CultureInfo.InvariantCulture));
                                 break;
                             }
 
@@ -759,15 +759,15 @@ namespace basic_script_interpreter
                             {
                                 double TmpAk = 0.0D;
                                 if (akkumulator.GetType() == typeof(Identifier))
-                                    TmpAk = Convert.ToDouble(((Identifier)akkumulator).value, CultureInfo.InvariantCulture);
+                                    TmpAk = Convert.ToDouble(((Identifier)akkumulator).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(akkumulator))
                                     TmpAk = Convert.ToDouble(akkumulator, CultureInfo.InvariantCulture);
                                 double TmpReg = 0.0D;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToDouble(((Identifier)register).value, CultureInfo.InvariantCulture);
+                                    TmpReg = Convert.ToDouble(((Identifier)register).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(register))
                                     TmpReg = Convert.ToDouble(register, CultureInfo.InvariantCulture);
-                                _scopes.Push(Convert.ToInt32(TmpAk, CultureInfo.InvariantCulture) / Convert.ToInt32(TmpReg, CultureInfo.InvariantCulture));
+                                scopes.Push(Convert.ToInt32(TmpAk, CultureInfo.InvariantCulture) / Convert.ToInt32(TmpReg, CultureInfo.InvariantCulture));
                                 break;
                             }
 
@@ -775,15 +775,15 @@ namespace basic_script_interpreter
                             {
                                 double TmpAk = 0.0D;
                                 if (akkumulator.GetType() == typeof(Identifier))
-                                    TmpAk = Convert.ToDouble(((Identifier)akkumulator).value, CultureInfo.InvariantCulture);
+                                    TmpAk = Convert.ToDouble(((Identifier)akkumulator).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(akkumulator))
                                     TmpAk = Convert.ToDouble(akkumulator, CultureInfo.InvariantCulture);
                                 double TmpReg = 0.0D;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToDouble(((Identifier)register).value, CultureInfo.InvariantCulture);
+                                    TmpReg = Convert.ToDouble(((Identifier)register).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(register))
                                     TmpReg = Convert.ToDouble(register, CultureInfo.InvariantCulture);
-                                _scopes.Push(Convert.ToDouble(TmpAk, CultureInfo.InvariantCulture) % Convert.ToDouble(TmpReg, CultureInfo.InvariantCulture));
+                                scopes.Push(Convert.ToDouble(TmpAk, CultureInfo.InvariantCulture) % Convert.ToDouble(TmpReg, CultureInfo.InvariantCulture));
                                 break;
                             }
 
@@ -796,10 +796,10 @@ namespace basic_script_interpreter
                                     TmpAk = Convert.ToDouble(akkumulator, CultureInfo.InvariantCulture);
                                 double TmpReg = 0.0D;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToDouble(((Identifier)register).value, CultureInfo.InvariantCulture);
+                                    TmpReg = Convert.ToDouble(((Identifier)register).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(register))
                                     TmpReg = Convert.ToDouble(register, CultureInfo.InvariantCulture);
-                                _scopes.Push(Math.Pow(Convert.ToDouble(TmpAk, CultureInfo.InvariantCulture), Convert.ToDouble(TmpReg, CultureInfo.InvariantCulture)));
+                                scopes.Push(Math.Pow(Convert.ToDouble(TmpAk, CultureInfo.InvariantCulture), Convert.ToDouble(TmpReg, CultureInfo.InvariantCulture)));
                                 break;
                             }
 
@@ -807,15 +807,15 @@ namespace basic_script_interpreter
                             {
                                 string TmpAk = string.Empty;
                                 if (akkumulator.GetType() == typeof(Identifier))
-                                    TmpAk = Convert.ToString(((Identifier)akkumulator).value);
+                                    TmpAk = Convert.ToString(((Identifier)akkumulator).Value);
                                 else
                                     TmpAk = Convert.ToString(akkumulator);
                                 string TmpReg = string.Empty;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToString(((Identifier)register).value);
+                                    TmpReg = Convert.ToString(((Identifier)register).Value);
                                 else
                                     TmpReg = Convert.ToString(register);
-                                _scopes.Push(akkumulator.ToString() + TmpReg.ToString());
+                                scopes.Push(akkumulator.ToString() + TmpReg.ToString());
                                 break;
                             }
 
@@ -823,15 +823,15 @@ namespace basic_script_interpreter
                             {
                                 int TmpAk = 0;
                                 if (akkumulator.GetType() == typeof(Identifier))
-                                    TmpAk = Convert.ToInt32(((Identifier)akkumulator).value);
+                                    TmpAk = Convert.ToInt32(((Identifier)akkumulator).Value);
                                 else if (Helper.IsNumericInt(akkumulator))
                                     TmpAk = Convert.ToInt32(akkumulator);
                                 int TmpReg = 0;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToInt32(((Identifier)register).value);
+                                    TmpReg = Convert.ToInt32(((Identifier)register).Value);
                                 else if (Helper.IsNumericInt(register))
                                     TmpReg = Convert.ToInt32(register);
-                                _scopes.Push(TmpAk | TmpReg);
+                                scopes.Push(TmpAk | TmpReg);
                                 break;
                             }
 
@@ -839,15 +839,15 @@ namespace basic_script_interpreter
                             {
                                 int TmpAk = 0;
                                 if (akkumulator.GetType() == typeof(Identifier))
-                                    TmpAk = Convert.ToInt32(((Identifier)akkumulator).value);
+                                    TmpAk = Convert.ToInt32(((Identifier)akkumulator).Value);
                                 else if (Helper.IsNumericInt(akkumulator))
                                     TmpAk = Convert.ToInt32(akkumulator);
                                 int TmpReg = 0;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToInt32(((Identifier)register).value);
+                                    TmpReg = Convert.ToInt32(((Identifier)register).Value);
                                 else if (Helper.IsNumericInt(register))
                                     TmpReg = Convert.ToInt32(register);
-                                _scopes.Push(TmpAk & TmpReg);
+                                scopes.Push(TmpAk & TmpReg);
                                 break;
                             }
 
@@ -856,15 +856,15 @@ namespace basic_script_interpreter
                             {
                                 string TmpAk = string.Empty;
                                 if (akkumulator.GetType() == typeof(Identifier))
-                                    TmpAk = Convert.ToString(((Identifier)akkumulator).value);
+                                    TmpAk = Convert.ToString(((Identifier)akkumulator).Value);
                                 else
                                     TmpAk = Convert.ToString(akkumulator);
                                 string TmpReg = string.Empty;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToString(((Identifier)register).value);
+                                    TmpReg = Convert.ToString(((Identifier)register).Value);
                                 else
                                     TmpReg = Convert.ToString(register);
-                                _scopes.Push(TmpAk.Equals(TmpReg));
+                                scopes.Push(TmpAk.Equals(TmpReg));
                                 break;
                             }
 
@@ -873,15 +873,15 @@ namespace basic_script_interpreter
                             {
                                 string TmpAk = string.Empty;
                                 if (akkumulator.GetType() == typeof(Identifier))
-                                    TmpAk = Convert.ToString(((Identifier)akkumulator).value);
+                                    TmpAk = Convert.ToString(((Identifier)akkumulator).Value);
                                 else
                                     TmpAk = Convert.ToString(akkumulator);
                                 string TmpReg = string.Empty;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToString(((Identifier)register).value);
+                                    TmpReg = Convert.ToString(((Identifier)register).Value);
                                 else if (!Helper.IsNumericInt(register))
                                     TmpReg = Convert.ToString(register);
-                                _scopes.Push(!TmpAk.Equals(TmpReg));
+                                scopes.Push(!TmpAk.Equals(TmpReg));
                                 break;
                             }
 
@@ -890,15 +890,15 @@ namespace basic_script_interpreter
                             {
                                 double TmpAk = 0.0D;
                                 if (akkumulator.GetType() == typeof(Identifier))
-                                    TmpAk = Convert.ToInt32(((Identifier)akkumulator).value);
+                                    TmpAk = Convert.ToInt32(((Identifier)akkumulator).Value);
                                 else if (Helper.IsNumericInt(akkumulator))
                                     TmpAk = Convert.ToInt32(akkumulator);
                                 double TmpReg = 0.0D;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToInt32(((Identifier)register).value);
+                                    TmpReg = Convert.ToInt32(((Identifier)register).Value);
                                 else if (Helper.IsNumericInt(register))
                                     TmpReg = Convert.ToInt32(register);
-                                _scopes.Push(TmpAk < TmpReg);
+                                scopes.Push(TmpAk < TmpReg);
                                 break;
                             }
 
@@ -907,15 +907,15 @@ namespace basic_script_interpreter
                             {
                                 double TmpAk = 0.0D;
                                 if (akkumulator.GetType() == typeof(Identifier))
-                                    TmpAk = Convert.ToInt32(((Identifier)akkumulator).value);
+                                    TmpAk = Convert.ToInt32(((Identifier)akkumulator).Value);
                                 else if (Helper.IsNumericInt(akkumulator))
                                     TmpAk = Convert.ToInt32(akkumulator);
                                 double TmpReg = 0.0D;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToInt32(((Identifier)register).value);
+                                    TmpReg = Convert.ToInt32(((Identifier)register).Value);
                                 else if (Helper.IsNumericInt(register))
                                     TmpReg = Convert.ToInt32(register);
-                                _scopes.Push(TmpAk <= TmpReg);
+                                scopes.Push(TmpAk <= TmpReg);
                                 break;
                             }
 
@@ -924,15 +924,15 @@ namespace basic_script_interpreter
                             {
                                 double TmpAk = 0.0D;
                                 if (akkumulator.GetType() == typeof(Identifier))
-                                    TmpAk = Convert.ToInt32(((Identifier)akkumulator).value);
+                                    TmpAk = Convert.ToInt32(((Identifier)akkumulator).Value);
                                 else if (Helper.IsNumericInt(akkumulator))
                                     TmpAk = Convert.ToInt32(akkumulator);
                                 double TmpReg = 0;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToInt32(((Identifier)register).value);
+                                    TmpReg = Convert.ToInt32(((Identifier)register).Value);
                                 else if (Helper.IsNumericInt(register))
                                     TmpReg = Convert.ToInt32(register);
-                                _scopes.Push(TmpAk > TmpReg);
+                                scopes.Push(TmpAk > TmpReg);
                                 break;
                             }
 
@@ -941,15 +941,15 @@ namespace basic_script_interpreter
                             {
                                 double TmpAk = 0.0D;
                                 if (akkumulator.GetType() == typeof(Identifier))
-                                    TmpAk = Convert.ToInt32(((Identifier)akkumulator).value);
+                                    TmpAk = Convert.ToInt32(((Identifier)akkumulator).Value);
                                 else if (Helper.IsNumericInt(akkumulator))
                                     TmpAk = Convert.ToInt32(akkumulator);
                                 double TmpReg = 0.0D;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToInt32(((Identifier)register).value);
+                                    TmpReg = Convert.ToInt32(((Identifier)register).Value);
                                 else if (Helper.IsNumericInt(register))
                                     TmpReg = Convert.ToInt32(register);
-                                _scopes.Push(TmpAk >= TmpReg);
+                                scopes.Push(TmpAk >= TmpReg);
                                 break;
                             }
                     }
@@ -957,16 +957,16 @@ namespace basic_script_interpreter
                 catch (Exception ex)
                 {
 
-                    _running = false;
+                    running = false;
                     ErrorObject.Raise((int)InterpreterError.runErrors.errMath, "Code.Run", "Error during calculation (binary op " + operation.GetValue(0).ToString() + "): " + ex.HResult + "(" + ex.Message + ")", 0, 0, 0);
                 }
             }
 
 
         }
-        private void unaryMathOperators(object[] operation)
+        private void UnaryMathOperators(object[] operation)
         {
-            var akkumulator = _scopes.PopScopes().value;
+            var akkumulator = scopes.PopScopes().Value;
 
             try
             {
@@ -975,48 +975,48 @@ namespace basic_script_interpreter
                     case Opcodes.opNegate:
                         {
                             double number = Formathelper.FormatDoubleNumber(akkumulator.ToString());
-                            _scopes.Push(number * -1);
+                            scopes.Push(number * -1);
                             break;
                         }
 
                     case Opcodes.opNot:
                         {
                             var tmp = Convert.ToBoolean(akkumulator);
-                            _scopes.Push(!tmp);
+                            scopes.Push(!tmp);
                             break;
                         }
 
                     case Opcodes.opFactorial:
                         {
-                            _scopes.Push(Factorial(Convert.ToInt32(akkumulator)));
+                            scopes.Push(Factorial(Convert.ToInt32(akkumulator)));
                             break;
                         }
 
                     case Opcodes.opSin:
                         {
                             double number = Formathelper.FormatDoubleNumber(akkumulator.ToString());
-                            _scopes.Push(System.Math.Sin(number));
+                            scopes.Push(System.Math.Sin(number));
                             break;
                         }
 
                     case Opcodes.opCos:
                         {
                             double number = Formathelper.FormatDoubleNumber(akkumulator.ToString());
-                            _scopes.Push(System.Math.Cos(number));
+                            scopes.Push(System.Math.Cos(number));
                             break;
                         }
 
                     case Opcodes.opTan:
                         {
                             double number = Formathelper.FormatDoubleNumber(akkumulator.ToString());
-                            _scopes.Push(System.Math.Tan(number));
+                            scopes.Push(System.Math.Tan(number));
                             break;
                         }
 
                     case Opcodes.opATan:
                         {
                             double number = Formathelper.FormatDoubleNumber(akkumulator.ToString());
-                            _scopes.Push(System.Math.Atan(number));
+                            scopes.Push(System.Math.Atan(number));
                             break;
                         }
                 }
@@ -1024,7 +1024,7 @@ namespace basic_script_interpreter
             catch (Exception ex)
             {
 
-                _running = false;
+                running = false;
                 ErrorObject.Raise((int)InterpreterError.runErrors.errMath, "Code.Run", "Error during calculation (unary op " + operation.GetValue(0).ToString() + "): " + ex.HResult + " (" + ex.Message + ")", 0, 0, 0);
             }
 

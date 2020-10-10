@@ -1,12 +1,10 @@
-﻿using Microsoft.VisualBasic;
-using System;
+﻿using System;
 using System.Diagnostics;
-using System.Reflection.PortableExecutable;
 
-namespace basic_script_interpreter
+namespace Basic_Script_Interpreter
 {
 
-    
+
     namespace Macro.Process
     {
         public class StringInputStream : Code.IInputStream

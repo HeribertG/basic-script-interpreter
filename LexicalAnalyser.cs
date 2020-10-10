@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Security.Principal;
-using static basic_script_interpreter.InterpreterError;
+using static Basic_Script_Interpreter.InterpreterError;
 
-namespace basic_script_interpreter
+namespace Basic_Script_Interpreter
 {
 
 
@@ -11,8 +11,8 @@ namespace basic_script_interpreter
     {
         private const string COMMENT_CHAR = "'"; // Anfangszeichen für Kommentare
 
-        private Code.IInputStream _source; // Quelltext-Datenstrom
-        private System.Collections.Generic.Dictionary<string, int> _predefinedIdentifiers;
+        private Code.IInputStream source; // Quelltext-Datenstrom
+        private System.Collections.Generic.Dictionary<string, int> predefinedIdentifiers;
         private InterpreterError errorObject;
 
 
@@ -20,7 +20,7 @@ namespace basic_script_interpreter
 
         public LexicalAnalyser Connect(Code.IInputStream source, InterpreterError errorObject)
         {
-            _source = source;
+            this.source = source;
             this.errorObject = errorObject;
 
             return this;
@@ -32,10 +32,10 @@ namespace basic_script_interpreter
             {
                 try
                 {
-                    if (_source != null)
+                    if (source != null)
                     {
                         errorObject = value;
-                        _source.ErrorObject = errorObject;
+                        source.ErrorObject = errorObject;
                     }
                 }
                 catch (Exception ex)
@@ -56,25 +56,25 @@ namespace basic_script_interpreter
 
             // führende Leerzeichen und Tab und Kommentare
             // vor nächstem Symbol überspringen
-            if (!_source.EOF)
+            if (!source.EOF)
             {
                 do
                 {
-                    c = _source.GetNextChar();
+                    c = source.GetNextChar();
                     if (c == COMMENT_CHAR)
                     {
-                        _source.SkipComment();
+                        source.SkipComment();
                         c = " ";
                     }
                 }
-                while (c == " " & !_source.EOF);
+                while (c == " " & !source.EOF);
             }
 
             // Zeile/Spalte des aktuellen Symbols vermerken
-            nextSymbol.Position(_source.Line, _source.Col, _source.Index);
+            nextSymbol.Position(source.Line, source.Col, source.Index);
 
             
-            if (!_source.EOF)
+            if (!source.EOF)
             {
                 // Zeichenweise das nächste Symbol zusammensetzen
                 switch (c.ToUpper())
@@ -146,7 +146,7 @@ namespace basic_script_interpreter
                     case "<" // "<", "<=", "<>"
              :
                         {
-                            c = _source.GetNextChar();
+                            c = source.GetNextChar();
                             switch (c)
                             {
                                 case ">":
@@ -163,7 +163,7 @@ namespace basic_script_interpreter
 
                                 default:
                                     {
-                                        _source.GoBack();
+                                        source.GoBack();
 
                                         nextSymbol.Init((Symbol.Tokens)Symbol.Tokens.tokLT, "<");
                                         break;
@@ -175,7 +175,7 @@ namespace basic_script_interpreter
 
                     case ">":
                         {
-                            c = _source.GetNextChar();
+                            c = source.GetNextChar();
                             switch (c)
                             {
                                 case "=":
@@ -185,7 +185,7 @@ namespace basic_script_interpreter
                                     }
                                 default:
                                     {
-                                        _source.GoBack();
+                                        source.GoBack();
 
                                         nextSymbol.Init((Symbol.Tokens)Symbol.Tokens.tokGT, ">");
                                         break;
@@ -348,11 +348,11 @@ namespace basic_script_interpreter
                         var endOfEmptyChar = false;
                         do
                         {
-                            c = _source.GetNextChar();
+                            c = source.GetNextChar();
                             switch (c)
                             {
                                 case "\"":
-                                    c = _source.GetNextChar();
+                                    c = source.GetNextChar();
                                     if (c == "\"")
                                     {
                                         symbolText += "\"";
@@ -360,7 +360,7 @@ namespace basic_script_interpreter
                                     else
                                     {
                                         endOfEmptyChar = true;
-                                        _source.GoBack();
+                                        source.GoBack();
                                         nextSymbol.Init(Symbol.Tokens.tokString, symbolText, symbolText);
                                     }
                                     break;
@@ -368,7 +368,7 @@ namespace basic_script_interpreter
 
                                     errorObject.Raise((int)lexErrors.errUnexpectedEOL,
                                       "LexAnalyser.nextSymbol", "String not closed; unexpected end of line encountered",
-                                      _source.Line, _source.Col, _source.Index);
+                                      source.Line, source.Col, source.Index);
                                     endOfEmptyChar = true;
                                     break;
 
@@ -376,7 +376,7 @@ namespace basic_script_interpreter
                                 case "":
                                     errorObject.Raise((int)lexErrors.errUnexpectedEOF,
                                       "LexAnalyser.nextSymbol", "String not closed; unexpected end of source",
-                                       _source.Line, _source.Col, _source.Index);
+                                       source.Line, source.Col, source.Index);
                                     endOfEmptyChar = true;
                                     break;
                                 default:
@@ -425,54 +425,54 @@ namespace basic_script_interpreter
 
             // Initialisieren der Tabelle mit den vordefinierten
             // Namenssymbolen.
-            _predefinedIdentifiers = new System.Collections.Generic.Dictionary<string, int>();
+            predefinedIdentifiers = new System.Collections.Generic.Dictionary<string, int>();
 
-            _predefinedIdentifiers.Add("DIV", (int)Symbol.Tokens.tokDiv);
-            _predefinedIdentifiers.Add("MOD", (int)Symbol.Tokens.tokMod);
-            _predefinedIdentifiers.Add("AND", (int)Symbol.Tokens.tokAND);
-            _predefinedIdentifiers.Add("OR", (int)Symbol.Tokens.tokOR);
-            _predefinedIdentifiers.Add("NOT", (int)Symbol.Tokens.tokNOT);
-            _predefinedIdentifiers.Add("SIN", (int)Symbol.Tokens.tokSin);
-            _predefinedIdentifiers.Add("COS", (int)Symbol.Tokens.tokCos);
-            _predefinedIdentifiers.Add("TAN", (int)Symbol.Tokens.tokTan);
-            _predefinedIdentifiers.Add("ATAN", (int)Symbol.Tokens.tokATan);
-            _predefinedIdentifiers.Add("IIF", (int)Symbol.Tokens.tokIIF);
-            _predefinedIdentifiers.Add("IF", (int)Symbol.Tokens.tokIF);
-            _predefinedIdentifiers.Add("THEN", (int)Symbol.Tokens.tokTHEN);
-            _predefinedIdentifiers.Add("ELSE", (int)Symbol.Tokens.tokELSE);
-            _predefinedIdentifiers.Add("END", (int)Symbol.Tokens.tokEND);
-            _predefinedIdentifiers.Add("ENDIF", (int)Symbol.Tokens.tokENDIF);
-            _predefinedIdentifiers.Add("DO", (int)Symbol.Tokens.tokDO);
-            _predefinedIdentifiers.Add("WHILE", (int)Symbol.Tokens.tokWHILE);
-            _predefinedIdentifiers.Add("LOOP", (int)Symbol.Tokens.tokLOOP);
-            _predefinedIdentifiers.Add("UNTIL", (int)Symbol.Tokens.tokUNTIL);
-            _predefinedIdentifiers.Add("FOR", (int)Symbol.Tokens.tokFOR);
-            _predefinedIdentifiers.Add("TO", (int)Symbol.Tokens.tokTO);
-            _predefinedIdentifiers.Add("STEP", (int)Symbol.Tokens.tokSTEP);
-            _predefinedIdentifiers.Add("NEXT", (int)Symbol.Tokens.tokNEXT);
-            _predefinedIdentifiers.Add("CONST", (int)Symbol.Tokens.tokCONST);
-            _predefinedIdentifiers.Add("DIM", (int)Symbol.Tokens.tokDIM);
-            _predefinedIdentifiers.Add("FUNCTION", (int)Symbol.Tokens.tokFUNCTION);
-            _predefinedIdentifiers.Add("ENDFUNCTION", (int)Symbol.Tokens.tokENDFUNCTION);
-            _predefinedIdentifiers.Add("SUB", (int)Symbol.Tokens.tokSUB);
-            _predefinedIdentifiers.Add("ENDSUB", (int)Symbol.Tokens.tokENDSUB);
-            _predefinedIdentifiers.Add("EXIT", (int)Symbol.Tokens.tokEXIT);
-            _predefinedIdentifiers.Add("DEBUGPRINT", (int)Symbol.Tokens.tokDebugPrint);
-            _predefinedIdentifiers.Add("DEBUGCLEAR", (int)Symbol.Tokens.tokDebugClear);
-            _predefinedIdentifiers.Add("DEBUGSHOW", (int)Symbol.Tokens.tokDebugShow);
-            _predefinedIdentifiers.Add("DEBUGHIDE", (int)Symbol.Tokens.tokDebugHide);
-            _predefinedIdentifiers.Add("MSGBOX", (int)Symbol.Tokens.tokMsgbox);
-            _predefinedIdentifiers.Add("MESSAGE", (int)Symbol.Tokens.tokMessage);
-            _predefinedIdentifiers.Add("DOEVENTS", (int)Symbol.Tokens.tokDoEvents);
-            _predefinedIdentifiers.Add("INPUTBOX", (int)Symbol.Tokens.tokInputbox);
-            _predefinedIdentifiers.Add("TRUE", (int)Symbol.Tokens.tokTrue);
-            _predefinedIdentifiers.Add("FALSE", (int)Symbol.Tokens.tokFalse);
-            _predefinedIdentifiers.Add("PI", (int)Symbol.Tokens.tokPI);
-            _predefinedIdentifiers.Add("VBCRLF", (int)Symbol.Tokens.tokCrlf);
-            _predefinedIdentifiers.Add("VBTAB", (int)Symbol.Tokens.tokTab);
-            _predefinedIdentifiers.Add("VBCR", (int)Symbol.Tokens.tokCr);
-            _predefinedIdentifiers.Add("VBLF", (int)Symbol.Tokens.tokLf);
-            _predefinedIdentifiers.Add("IMPORT", (int)Symbol.Tokens.tokEXTERNAL);
+            predefinedIdentifiers.Add("DIV", (int)Symbol.Tokens.tokDiv);
+            predefinedIdentifiers.Add("MOD", (int)Symbol.Tokens.tokMod);
+            predefinedIdentifiers.Add("AND", (int)Symbol.Tokens.tokAND);
+            predefinedIdentifiers.Add("OR", (int)Symbol.Tokens.tokOR);
+            predefinedIdentifiers.Add("NOT", (int)Symbol.Tokens.tokNOT);
+            predefinedIdentifiers.Add("SIN", (int)Symbol.Tokens.tokSin);
+            predefinedIdentifiers.Add("COS", (int)Symbol.Tokens.tokCos);
+            predefinedIdentifiers.Add("TAN", (int)Symbol.Tokens.tokTan);
+            predefinedIdentifiers.Add("ATAN", (int)Symbol.Tokens.tokATan);
+            predefinedIdentifiers.Add("IIF", (int)Symbol.Tokens.tokIIF);
+            predefinedIdentifiers.Add("IF", (int)Symbol.Tokens.tokIF);
+            predefinedIdentifiers.Add("THEN", (int)Symbol.Tokens.tokTHEN);
+            predefinedIdentifiers.Add("ELSE", (int)Symbol.Tokens.tokELSE);
+            predefinedIdentifiers.Add("END", (int)Symbol.Tokens.tokEND);
+            predefinedIdentifiers.Add("ENDIF", (int)Symbol.Tokens.tokENDIF);
+            predefinedIdentifiers.Add("DO", (int)Symbol.Tokens.tokDO);
+            predefinedIdentifiers.Add("WHILE", (int)Symbol.Tokens.tokWHILE);
+            predefinedIdentifiers.Add("LOOP", (int)Symbol.Tokens.tokLOOP);
+            predefinedIdentifiers.Add("UNTIL", (int)Symbol.Tokens.tokUNTIL);
+            predefinedIdentifiers.Add("FOR", (int)Symbol.Tokens.tokFOR);
+            predefinedIdentifiers.Add("TO", (int)Symbol.Tokens.tokTO);
+            predefinedIdentifiers.Add("STEP", (int)Symbol.Tokens.tokSTEP);
+            predefinedIdentifiers.Add("NEXT", (int)Symbol.Tokens.tokNEXT);
+            predefinedIdentifiers.Add("CONST", (int)Symbol.Tokens.tokCONST);
+            predefinedIdentifiers.Add("DIM", (int)Symbol.Tokens.tokDIM);
+            predefinedIdentifiers.Add("FUNCTION", (int)Symbol.Tokens.tokFUNCTION);
+            predefinedIdentifiers.Add("ENDFUNCTION", (int)Symbol.Tokens.tokENDFUNCTION);
+            predefinedIdentifiers.Add("SUB", (int)Symbol.Tokens.tokSUB);
+            predefinedIdentifiers.Add("ENDSUB", (int)Symbol.Tokens.tokENDSUB);
+            predefinedIdentifiers.Add("EXIT", (int)Symbol.Tokens.tokEXIT);
+            predefinedIdentifiers.Add("DEBUGPRINT", (int)Symbol.Tokens.tokDebugPrint);
+            predefinedIdentifiers.Add("DEBUGCLEAR", (int)Symbol.Tokens.tokDebugClear);
+            predefinedIdentifiers.Add("DEBUGSHOW", (int)Symbol.Tokens.tokDebugShow);
+            predefinedIdentifiers.Add("DEBUGHIDE", (int)Symbol.Tokens.tokDebugHide);
+            predefinedIdentifiers.Add("MSGBOX", (int)Symbol.Tokens.tokMsgbox);
+            predefinedIdentifiers.Add("MESSAGE", (int)Symbol.Tokens.tokMessage);
+            predefinedIdentifiers.Add("DOEVENTS", (int)Symbol.Tokens.tokDoEvents);
+            predefinedIdentifiers.Add("INPUTBOX", (int)Symbol.Tokens.tokInputbox);
+            predefinedIdentifiers.Add("TRUE", (int)Symbol.Tokens.tokTrue);
+            predefinedIdentifiers.Add("FALSE", (int)Symbol.Tokens.tokFalse);
+            predefinedIdentifiers.Add("PI", (int)Symbol.Tokens.tokPI);
+            predefinedIdentifiers.Add("VBCRLF", (int)Symbol.Tokens.tokCrlf);
+            predefinedIdentifiers.Add("VBTAB", (int)Symbol.Tokens.tokTab);
+            predefinedIdentifiers.Add("VBCR", (int)Symbol.Tokens.tokCr);
+            predefinedIdentifiers.Add("VBLF", (int)Symbol.Tokens.tokLf);
+            predefinedIdentifiers.Add("IMPORT", (int)Symbol.Tokens.tokEXTERNAL);
 
 
         }
@@ -480,7 +480,7 @@ namespace basic_script_interpreter
         private void mathOperatorOrAssignments(Symbol nextSymbol, string c)
         {
             var symbolText = c;
-            c = _source.GetNextChar();
+            c = source.GetNextChar();
 
             if ((c == "="))
             {
@@ -512,7 +512,7 @@ namespace basic_script_interpreter
                     break;
             }
 
-            if (c != "=") { _source.GoBack(); }
+            if (c != "=") { source.GoBack(); }
         }
 
         private Tuple<bool, string> Numbers(Symbol nextSymbol, string c)
@@ -522,7 +522,7 @@ namespace basic_script_interpreter
 
             do
             {
-                c = _source.GetNextChar();
+                c = source.GetNextChar();
                 if (Helper.IsNumericInt(c) && ((int.Parse(c) >= 0) && (int.Parse(c) <= 9)))
                 {
                     symbolText = (symbolText + c);
@@ -534,14 +534,14 @@ namespace basic_script_interpreter
                       ; true;
                     )
                     {
-                        c = _source.GetNextChar();
+                        c = source.GetNextChar();
                         if (Helper.IsNumericInt(c) && ((int.Parse(c) >= 0) && (int.Parse(c) <= 9)))
                         {
                             symbolText = (symbolText + c);
                         }
                         else
                         {
-                            _source.GoBack();
+                            source.GoBack();
                             returnNumberSymbol = true;
                             break;
                         }
@@ -552,11 +552,11 @@ namespace basic_script_interpreter
                 }
                 else
                 {
-                    _source.GoBack();
+                    source.GoBack();
                     returnNumberSymbol = true;
                     break;
                 }
-            } while (_source.EOF == false);
+            } while (source.EOF == false);
 
             return new Tuple<bool, string>(returnNumberSymbol, symbolText);
         }
@@ -567,7 +567,7 @@ namespace basic_script_interpreter
             string symbolText = c;
             bool breakLoop = false;
 
-            c = _source.GetNextChar();
+            c = source.GetNextChar();
             do
             {
                 switch (c.ToUpper())
@@ -700,11 +700,11 @@ namespace basic_script_interpreter
                         symbolText += c;
                         break;
                     default:
-                        _source.GoBack();
+                        source.GoBack();
                         breakLoop = true;
-                        if (_predefinedIdentifiers.ContainsKey(symbolText.ToUpper()))
+                        if (predefinedIdentifiers.ContainsKey(symbolText.ToUpper()))
                         {
-                            nextSymbol.Init((Symbol.Tokens)_predefinedIdentifiers[symbolText.ToUpper()], symbolText);
+                            nextSymbol.Init((Symbol.Tokens)predefinedIdentifiers[symbolText.ToUpper()], symbolText);
                         }
                         else
                         {
@@ -712,13 +712,13 @@ namespace basic_script_interpreter
                         }
                         break;
                 }
-                if (_source.EOF)
+                if (source.EOF)
                 {
                     breakLoop = true;
                 }
                 if (!breakLoop)
                 {
-                    c = _source.GetNextChar();
+                    c = source.GetNextChar();
                 }
             }
             while (!breakLoop);
@@ -729,7 +729,7 @@ namespace basic_script_interpreter
         public void Dispose()
         {
             errorObject = null;
-            _source = null;
+            source = null;
 
         }
 

@@ -1,15 +1,9 @@
 ﻿
 using System.Collections.Generic;
 
-namespace basic_script_interpreter
+namespace Basic_Script_Interpreter
 {
-    // -----------------------------------------------------------------
-    // Autor: Heribert Gasparoli
-    // -----------------------------------------------------------------
-    //
-    // Stand: 01/2011
-    //
-    // -----------------------------------------------------------------
+   
     // Identifier: Dient während Compile- und Laufzeit zur
     // Aufnahme der relevanten Daten für benannte Variablen,
     // Konstanten, Funktionen/Subs
@@ -34,14 +28,14 @@ namespace basic_script_interpreter
         }
 
 
-        public string name;
-        public object value;
+        public string Name;
+        public object Value;
 
-        public IdentifierTypes idType;
+        public IdentifierTypes IdType;
 
-        public int address; // Adresse der Funktion
+        public int Address; // Adresse der Funktion
      
-        public List<object> formalParameters; // nur bei Funktionen: Namen der formalen Parameter
+        public List<object> FormalParameters; // nur bei Funktionen: Namen der formalen Parameter
     }
 
 }

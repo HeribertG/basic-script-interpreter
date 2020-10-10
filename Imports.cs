@@ -1,7 +1,7 @@
 ﻿using System;
 
 
-namespace basic_script_interpreter
+namespace Basic_Script_Interpreter
 {
     public class Imports
     {
