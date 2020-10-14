@@ -2,13 +2,14 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Net.Http.Headers;
 
 namespace Basic_Script_Interpreter
 {
     public class Code : IDisposable
     {
 
-
+        #region Events
         // -------------------
         // EREIGNISDEKLARATION
         // -------------------
@@ -45,6 +46,8 @@ namespace Basic_Script_Interpreter
         public event MessageEventHandler Message;
 
         public delegate void MessageEventHandler(int type, string message);
+
+        #endregion
 
         public interface IInputStream
         {
@@ -159,7 +162,7 @@ namespace Basic_Script_Interpreter
         {
             ErrorObject = new InterpreterError();
 
-            
+
             StringInputStream sourceStream = new StringInputStream();
             // den Inputstream syntaktisch prüfen und Code erzeugen
             var parser = new SyntaxAnalyser(ErrorObject);
@@ -171,10 +174,10 @@ namespace Basic_Script_Interpreter
 
             if (ErrorObject.Number == 0)
             {
-               
+
                 return true;
             }
-          
+
             return false;
         }
         //Code ausführen
@@ -251,7 +254,7 @@ namespace Basic_Script_Interpreter
         internal void FixUp(int index, params object[] parameters)
         {
             object[] operation = new object[parameters.Length + 1];
-            var  tmp = (object[])code[index];
+            var tmp = (object[])code[index];
             operation[0] = tmp[0];
 
             for (int i = 0; i <= parameters.Length - 1; i++)
@@ -286,13 +289,18 @@ namespace Basic_Script_Interpreter
 
             bool accepted = false;
             bool continues = false;
-            object xPos, default_Renamed, yPos;
+            object xPos, defaultRenamed, yPos;
+
+            var counter = 0;
+
             while ((pc <= code.Count - 1) & running)
             {
                 akkumulator = null;
                 register = null;
 
                 operation = (Object[])code[pc];
+
+                counter++;
 
                 switch ((Opcodes)operation.GetValue(0))
                 {
@@ -321,11 +329,11 @@ namespace Basic_Script_Interpreter
                     case Opcodes.opPushVariable:
                         {
                             // Parameter:    Variablenname
-                            Identifier tmp =null;
+                            Identifier tmp = null;
                             try
                             {
                                 tmp = scopes.Retrieve(operation.GetValue(1).ToString());
-                                register = tmp.Value;
+                                register = tmp;
                             }
                             catch (Exception)
                             {
@@ -343,13 +351,16 @@ namespace Basic_Script_Interpreter
                                 }
                             }
 
-                            if (tmp ==null)
+                            if (tmp == null)
                             {
                                 running = false;
                                 ErrorObject.Raise((int)InterpreterError.runErrors.errUninitializedVar, "Code.Run", "Variable '" + operation.GetValue(1).ToString() + "' not hasn´t been assigned a Value yet", 0, 0, 0);
-                            } else
+                            }
+                            else
                             {
-                            scopes.Push(register);
+                                if(register.GetType() == typeof(Identifier)) { scopes.Push(((Identifier)register).Value); }
+                                else { scopes.Push(register.ToString()); }
+                               
 
                             }
 
@@ -474,8 +485,8 @@ namespace Basic_Script_Interpreter
                             string msg = string.Empty;
 
 
-                            register = scopes.PopScopes().Value;
-                            if (register != null) { msg = register.ToString(); }
+                            register = scopes.PopScopes();
+                            if (register != null) { msg = ((Identifier)register).Value.ToString(); }
 
                             DebugPrint?.Invoke(msg);
 
@@ -509,15 +520,31 @@ namespace Basic_Script_Interpreter
                             try
                             {
                                 string msg = string.Empty;
-                                int Type;
-                                register = scopes.PopScopes().Value; // Message
+                                int Type = 0;
+                                register = scopes.PopScopes(); // Message
                                 akkumulator = scopes.PopScopes().Value; // Type
-                                Type = Convert.ToInt32(akkumulator);
+                                if (register is Identifier)
+                                {
+                                    if (register != null)
+                                    {
+                                        if (register.GetType() == typeof(Identifier)) { msg = ((Identifier)register).Value.ToString(); }
+                                        else { msg = register.ToString(); }
+                                                
+                                    }
+                                }
 
-                                msg = register.ToString();
+
+                                if (akkumulator != null) 
+                                {
+                                    if (akkumulator.GetType() == typeof(Identifier)) { Type = Convert.ToInt32(((Identifier)akkumulator).Value); }
+                                    else { Type = Convert.ToInt32(akkumulator); }
+                                   
+                                }
+
+
                                 Message?.Invoke(Type, msg);
                             }
-                            catch (Exception ex)
+                            catch (Exception )
                             {
                                 Message?.Invoke(-1, string.Empty);
                             }
@@ -567,14 +594,14 @@ namespace Basic_Script_Interpreter
 
                             yPos = scopes.PopScopes().Value;
                             xPos = scopes.PopScopes().Value;
-                            default_Renamed = scopes.PopScopes().Value;
+                            defaultRenamed = scopes.PopScopes().Value;
                             register = scopes.PopScopes().Value;
                             akkumulator = scopes.PopScopes().Value;
 
                             try
                             {
                                 // TODO:InputBox
-                                //string Anwert = Microsoft.VisualBasic.Interaction.InputBox(Akkumulator.ToString(), Register.ToString(), default_Renamed.ToString(), Convert.ToInt32(xPos), Convert.ToInt32(yPos));
+                                //string Anwert = Microsoft.VisualBasic.Interaction.InputBox(Akkumulator.ToString(), Register.ToString(), defaultRenamed.ToString(), Convert.ToInt32(xPos), Convert.ToInt32(yPos));
                                 //scopes.Push(Anwert);
                             }
                             catch (Exception ex)
@@ -678,12 +705,12 @@ namespace Basic_Script_Interpreter
             else
                 return n * Factorial(n - 1);
         }
-
         private void BinaryMathOperators(object[] operation, object akkumulator, object register)
         {
 
-            register = scopes.PopScopes().Value;
-            akkumulator = scopes.PopScopes().Value;
+            register = scopes.PopScopes();
+            akkumulator = scopes.PopScopes();
+
             if (register != null && akkumulator != null)
             {
                 try
@@ -694,13 +721,13 @@ namespace Basic_Script_Interpreter
                             {
                                 double TmpAk = 0.0D;
                                 if (akkumulator.GetType() == typeof(Identifier))
-                                 
+
                                     TmpAk = Convert.ToDouble(((Identifier)akkumulator).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(akkumulator))
                                     TmpAk = Convert.ToDouble(akkumulator, CultureInfo.InvariantCulture);
                                 double TmpReg = 0.0D;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToDouble(((Identifier)akkumulator).Value, CultureInfo.InvariantCulture);
+                                    TmpReg = Convert.ToDouble(((Identifier)register).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(register))
                                     TmpReg = Convert.ToDouble(register, CultureInfo.InvariantCulture);
                                 scopes.Push(TmpAk + TmpReg);
@@ -716,7 +743,7 @@ namespace Basic_Script_Interpreter
                                     TmpAk = Convert.ToDouble(akkumulator, CultureInfo.InvariantCulture);
                                 double TmpReg = 0.0D;
                                 if (register.GetType() == typeof(Identifier))
-                                    TmpReg = Convert.ToDouble(((Identifier)akkumulator).Value, CultureInfo.InvariantCulture);
+                                    TmpReg = Convert.ToDouble(((Identifier)register).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(register))
                                     TmpReg = Convert.ToDouble(register, CultureInfo.InvariantCulture);
                                 scopes.Push(TmpAk - TmpReg);
@@ -791,7 +818,7 @@ namespace Basic_Script_Interpreter
                             {
                                 double TmpAk = 0.0D;
                                 if (akkumulator.GetType() == typeof(Identifier))
-                                    TmpAk = Convert.ToDouble(((Identifier)akkumulator), CultureInfo.InvariantCulture);
+                                    TmpAk = Convert.ToDouble(((Identifier)akkumulator).Value, CultureInfo.InvariantCulture);
                                 else if (Helper.IsNumericDouble(akkumulator))
                                     TmpAk = Convert.ToDouble(akkumulator, CultureInfo.InvariantCulture);
                                 double TmpReg = 0.0D;
@@ -815,7 +842,7 @@ namespace Basic_Script_Interpreter
                                     TmpReg = Convert.ToString(((Identifier)register).Value);
                                 else
                                     TmpReg = Convert.ToString(register);
-                                scopes.Push(akkumulator.ToString() + TmpReg.ToString());
+                                scopes.Push(TmpAk.ToString() + TmpReg.ToString());
                                 break;
                             }
 

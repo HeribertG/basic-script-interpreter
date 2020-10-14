@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "basic-script-interpreter": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

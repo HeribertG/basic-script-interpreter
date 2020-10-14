@@ -98,7 +98,7 @@ namespace Basic_Script_Interpreter
                 c.Name = name;
                 c.Value = value;
             }
-         
+
             if (Variables.Count == 0) { Variables.Add(c); }
             else { Variables.Insert(0, c); }
 
@@ -124,8 +124,10 @@ namespace Basic_Script_Interpreter
                 // Die Stackwerte fangen nach der letzten benannten Variablen im Scope an
                 try
                 {
+
                     pop = Variables[Variables.Count() - 1];
                     Variables.Remove(pop);
+
                 }
                 catch (Exception ex)
                 {
@@ -136,7 +138,7 @@ namespace Basic_Script_Interpreter
                 // Eine Stackwert vom Stacktop aus gezählt (0..n) zurückliefern, der Stack
                 // bleibt aber wie er ist
 
-                pop = Variables[Variables.Count()-1 - index];
+                pop = Variables[Variables.Count() - 1 - index];
 
             return pop;
         }
