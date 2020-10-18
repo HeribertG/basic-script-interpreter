@@ -14,14 +14,14 @@ namespace Basic_Script_Interpreter
         public double HourWithoutAddition { get; set; } = 8; // Arbeitszeit ohne Zusatz
         public double HourWithAddition { get; set; } = 0; // Arbeitszeit mit Zusatz
         public double HourAddition { get; set; } = 0; // Zusatz
-        public int BlockShiftNumber { get; set; } = 2;
+        public int BlockShiftNumber { get; set; } = 1;
         public int ShiftType { get; set; } = 3;
         public int WeekdayNumber { get; set; } = 2;
         public double NightHour { get; set; } = 7;
         public double NighthourAdditionalPercent { get; set; } = 0.1;
         public double HolydayhourAdditionalPercent { get; set; } = 0.1;
         
-        public double Holydayhour { get; set; } = 1;
+        public double Holydayhour { get; set; } = 0;
         public double Daybefor_Holydayhour { get; set; } = 7;
         public int BlockNumber { get; set; } = 2;
         public int LastType { get; set; }

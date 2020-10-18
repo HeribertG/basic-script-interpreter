@@ -899,7 +899,7 @@ namespace Basic_Script_Interpreter
                     code.FixUp(Convert.ToInt32(operandPCs[i]) - 1, code.EndOfCodePC);
                 code.Add(Code.Opcodes.opPushValue, false); // also dieses Ergebnis auch auf den Stack legen
 
-                code.FixUp(thenPC, code.EndOfCodePC);
+                code.FixUp(thenPC-1, code.EndOfCodePC);
             }
         }
 
