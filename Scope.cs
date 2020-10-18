@@ -122,17 +122,15 @@ namespace Basic_Script_Interpreter
             {
                 // Den obersten Stackwert vom Stack nehmen und zurückliefern
                 // Die Stackwerte fangen nach der letzten benannten Variablen im Scope an
-                try
+
+                if (Variables.Count() > 0)
                 {
 
                     pop = Variables[Variables.Count() - 1];
                     Variables.Remove(pop);
+                }
 
-                }
-                catch (Exception ex)
-                {
-                    Debug.Print("Scope.Pop: " + ex.Message);
-                }
+
             }
             else
                 // Eine Stackwert vom Stacktop aus gezählt (0..n) zurückliefern, der Stack

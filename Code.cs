@@ -41,7 +41,7 @@ namespace Basic_Script_Interpreter
 
         public event TimeoutEventHandler Timeout;    // für TimeOut
 
-        public delegate void TimeoutEventHandler(bool cont);
+        public delegate void TimeoutEventHandler(ref bool cont);
 
         public event MessageEventHandler Message;
 
@@ -329,11 +329,14 @@ namespace Basic_Script_Interpreter
                     case Opcodes.opPushVariable:
                         {
                             // Parameter:    Variablenname
-                            Identifier tmp = null;
+                            var name = "";
                             try
                             {
-                                tmp = scopes.Retrieve(operation.GetValue(1).ToString());
-                                register = tmp;
+                               
+                                var tmp = operation.GetValue(1);
+                                if (tmp.GetType() == typeof(Identifier)) { name = ((Identifier)tmp).Value.ToString(); }
+                                else { name = tmp.ToString(); };
+                                register = scopes.Retrieve(name);
                             }
                             catch (Exception)
                             {
@@ -351,16 +354,16 @@ namespace Basic_Script_Interpreter
                                 }
                             }
 
-                            if (tmp == null)
+                            if (register == null)
                             {
                                 running = false;
                                 ErrorObject.Raise((int)InterpreterError.runErrors.errUninitializedVar, "Code.Run", "Variable '" + operation.GetValue(1).ToString() + "' not hasn´t been assigned a Value yet", 0, 0, 0);
                             }
                             else
                             {
-                                if(register.GetType() == typeof(Identifier)) { scopes.Push(((Identifier)register).Value); }
+                                if (register.GetType() == typeof(Identifier)) { scopes.Push(((Identifier)register).Value); }
                                 else { scopes.Push(register.ToString()); }
-                               
+
 
                             }
 
@@ -387,22 +390,21 @@ namespace Basic_Script_Interpreter
                         {
                             // Parameter:    Variablenname
                             // Stack:        der zuzuweisende Wert
-                            try
-                            {
-                                object result = null;
-                                register = scopes.Pop();
-                                if (register is Identifier) { result = ((Identifier)register).Value; } else { result = register; }
-                                scopes.Assign(operation.GetValue(1).ToString(), result);
-                            }
-                            catch (Exception)
+
+                            object result = null;
+                            register = scopes.Pop();
+                            if (register is Identifier) { result = ((Identifier)register).Value; } else { result = register; }
+                            if (!scopes.Assign(operation.GetValue(1).ToString(), result)) ;
                             {
                                 // Variable nicht alloziert, also Host anbieten
                                 accepted = false;
-                                Assign?.Invoke(operation.GetValue(1).ToString(), register.ToString(), ref accepted);
+
+                                 
+                                Assign?.Invoke(operation.GetValue(1).ToString(), result.ToString(), ref accepted);
                                 if (!accepted)
                                     // Host hat nicht mit Var am Hut, dann legen wir
                                     // sie eben selbst an
-                                    scopes.Allocate(operation.GetValue(1).ToString(), register.ToString());
+                                    scopes.Allocate(operation.GetValue(1).ToString(), result.ToString());
                             }
 
                             break;
@@ -529,22 +531,22 @@ namespace Basic_Script_Interpreter
                                     {
                                         if (register.GetType() == typeof(Identifier)) { msg = ((Identifier)register).Value.ToString(); }
                                         else { msg = register.ToString(); }
-                                                
+
                                     }
                                 }
 
 
-                                if (akkumulator != null) 
+                                if (akkumulator != null)
                                 {
                                     if (akkumulator.GetType() == typeof(Identifier)) { Type = Convert.ToInt32(((Identifier)akkumulator).Value); }
                                     else { Type = Convert.ToInt32(akkumulator); }
-                                   
+
                                 }
 
 
                                 Message?.Invoke(Type, msg);
                             }
-                            catch (Exception )
+                            catch (Exception)
                             {
                                 Message?.Invoke(-1, string.Empty);
                             }

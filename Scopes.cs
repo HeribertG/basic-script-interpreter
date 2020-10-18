@@ -8,7 +8,7 @@ using static Basic_Script_Interpreter.Identifier;
 // Das jeweils zuoberst liegende Scope-Objekt dient dabei als
 // normaler Programm-Stack.
 //
-// Variablen _symboltable (SyntaxAnalyser.cls) und scopes (Code.cls)
+// Variablen symboltable (SyntaxAnalyser.cls) und scopes (Code.cls)
 // sind Scopes-Objekte.
 namespace Basic_Script_Interpreter
 {
@@ -48,10 +48,17 @@ namespace Basic_Script_Interpreter
         // Von oben nach unten alle Scopes durchgehen und dem
         // ersten benannten Wert mit dem übergebenen Namen den
         // Wert zuweisen.
-        public void Assign(string name, object value)
+        public bool Assign(string name, object value)
         {
-            var vari = getVariable(name);
-            vari.Value = value;
+            var variable = getVariable(name);
+            if (variable !=null)
+            {
+                variable.Value = value;
+                return true;
+            }
+
+            return false;
+          
         }
 
         // dito, jedoch Wert zurückliefern (als kompletten Identifier)

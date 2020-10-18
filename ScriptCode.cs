@@ -10,7 +10,8 @@ namespace basic_script_interpreter
     // Code ein Clone der  compilierten Code Klasse
     class ScriptCode
     {
-        public List<string> Script { get; set; }
+        public List<string> importList  { get; set; }
         public Code currentCode { get; set; }
+        public string script { get; set; }
     }
 }
