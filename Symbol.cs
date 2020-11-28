@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Basic_Script_Interpreter
+namespace basic_script_interpreter
 {
     public class Symbol
     {
@@ -53,19 +49,19 @@ namespace Basic_Script_Interpreter
             tokModEq // %=
     ,
             // 16
-            tokAND,
-            tokOR,
-            tokNOT,
+            tokAnd,
+            tokOr,
+            tokNot,
             // 19
             tokEq // "="
     ,
             tokNotEq // "<>"
     ,
-            tokLT // less than "<"
+            tokLt // less than "<"
     ,
             tokLEq // less or equal "<="
     ,
-            tokGT // greater than ">"
+            tokGt // greater than ">"
     ,
             tokGEq // greater or equal ">="
     ,
@@ -83,28 +79,28 @@ namespace Basic_Script_Interpreter
             tokTan,
             tokATan,
             // 34
-            tokIIF,
-            tokIF,
-            tokTHEN,
-            tokELSE,
-            tokEND,
-            tokENDIF,
-            tokDO,
-            tokWHILE,
-            tokLOOP,
-            tokUNTIL,
-            tokFOR,
-            tokTO,
-            tokSTEP,
-            tokNEXT,
-            tokCONST,
-            tokDIM,
-            tokEXTERNAL,
-            tokFUNCTION,
-            tokENDFUNCTION,
-            tokSUB,
-            tokENDSUB,
-            tokEXIT,
+            tokIif,
+            tokIf,
+            tokThen,
+            tokElse,
+            tokEnd,
+            tokEndif,
+            tokDo,
+            tokWhile,
+            tokLoop,
+            tokUntil,
+            tokFor,
+            tokTo,
+            tokStep,
+            tokNext,
+            tokConst,
+            tokDim,
+            tokExternal,
+            tokFunction,
+            tokEndfunction,
+            tokSub,
+            tokEndsub,
+            tokExit,
             // 56
             tokComma,
             tokStatementDelimiter,
@@ -120,13 +116,13 @@ namespace Basic_Script_Interpreter
             // 66
             tokTrue,
             tokFalse,
-            tokPI,
+            tokPi,
             tokCrlf,
             tokTab,
             tokCr,
             tokLf,
             // 73
-            tokEOF
+            tokEof
         }
 
         internal void Position(int line, int col, int index)

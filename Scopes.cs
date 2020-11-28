@@ -1,8 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using static Basic_Script_Interpreter.Identifier;
+using static basic_script_interpreter.Identifier;
+
+namespace basic_script_interpreter
+{
 
 
 // Das jeweils zuoberst liegende Scope-Objekt dient dabei als
@@ -10,9 +13,6 @@ using static Basic_Script_Interpreter.Identifier;
 //
 // Variablen symboltable (SyntaxAnalyser.cls) und scopes (Code.cls)
 // sind Scopes-Objekte.
-namespace Basic_Script_Interpreter
-{
-
     public class Scopes
     {
         private List<Scope> _scopes = new List<Scope>();
@@ -40,7 +40,7 @@ namespace Basic_Script_Interpreter
             return result;
         }
 
-        public Identifier Allocate(string name, object value = null, Identifier.IdentifierTypes idType = Identifier.IdentifierTypes.idVariable)
+        public Identifier Allocate(string name, object value = null, IdentifierTypes idType = IdentifierTypes.idVariable)
         {
             return _scopes[_scopes.Count() - 1].Allocate(name, value, idType);
         }
@@ -50,10 +50,10 @@ namespace Basic_Script_Interpreter
         // Wert zuweisen.
         public bool Assign(string name, object value)
         {
-            var variable = getVariable(name);
+            var variable = GetVariable(name);
             if (variable !=null)
             {
-                variable.Value = value;
+                variable.value = value;
                 return true;
             }
 
@@ -64,7 +64,7 @@ namespace Basic_Script_Interpreter
         // dito, jedoch Wert zurückliefern (als kompletten Identifier)
         public Identifier Retrieve(string name)
         {
-            return getVariable(name);
+            return GetVariable(name);
         }
 
         public bool Exists(string name, bool? inCurrentScopeOnly = false, IdentifierTypes? idType = IdentifierTypes.idNone)
@@ -84,7 +84,7 @@ namespace Basic_Script_Interpreter
 
                 if (renamed != null)
                 {
-                    if (renamed.Name == name)
+                    if (renamed.name == name)
                     {
                         // Prüfen, ob gefundener Wert vom gewünschten Typ ist
                         if (idType == IdentifierTypes.idNone)
@@ -93,42 +93,42 @@ namespace Basic_Script_Interpreter
                         {
                             if (idType == IdentifierTypes.idIsVariableOfFunction)
                             {
-                                if (renamed.IdType == IdentifierTypes.idVariable || renamed.IdType == IdentifierTypes.idFunction)
+                                if (renamed.idType == IdentifierTypes.idVariable || renamed.idType == IdentifierTypes.idFunction)
                                 {
                                     result = true;
                                 }
                             }
                             else if (idType == IdentifierTypes.idSubOfFunction)
                             {
-                                if (renamed.IdType == IdentifierTypes.idSub || renamed.IdType == IdentifierTypes.idFunction)
+                                if (renamed.idType == IdentifierTypes.idSub || renamed.idType == IdentifierTypes.idFunction)
                                 {
                                     result = true;
                                 }
                             }
                             else if (idType == IdentifierTypes.idFunction)
                             {
-                                if (renamed.IdType == IdentifierTypes.idSub || renamed.IdType == IdentifierTypes.idFunction)
+                                if (renamed.idType == IdentifierTypes.idSub || renamed.idType == IdentifierTypes.idFunction)
                                 {
                                     result = true;
                                 }
                             }
                             else if (idType == IdentifierTypes.idFunction)
                             {
-                                if (renamed.IdType == IdentifierTypes.idFunction)
+                                if (renamed.idType == IdentifierTypes.idFunction)
                                 {
                                     result = true;
                                 }
                             }
                             else if (idType == IdentifierTypes.idSub)
                             {
-                                if (renamed.IdType == IdentifierTypes.idSub)
+                                if (renamed.idType == IdentifierTypes.idSub)
                                 {
                                     result = true;
                                 }
                             }
                             else if (idType == IdentifierTypes.idVariable)
                             {
-                                if (renamed.IdType == IdentifierTypes.idVariable)
+                                if (renamed.idType == IdentifierTypes.idVariable)
                                 {
                                     result = true;
                                 }
@@ -152,7 +152,7 @@ namespace Basic_Script_Interpreter
             {
                 Scope s = _scopes[_scopes.Count() - 1];
                 var c = new Identifier();
-                c.Value = value;
+                c.value = value;
                 s.Push(c);
             }
         }
@@ -173,7 +173,7 @@ namespace Basic_Script_Interpreter
         }
 
 
-        private Identifier getVariable(string name)
+        private Identifier GetVariable(string name)
         {
 
             Scope s;

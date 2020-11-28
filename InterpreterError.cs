@@ -1,9 +1,9 @@
-﻿
-namespace Basic_Script_Interpreter
+
+namespace basic_script_interpreter
 {
     // InterpreterError: Fehler-Objekt für alle Klasse der myScript-Engine
     // Über Raise() werden die Fehlerparameter gesetzt und ein VB-Fehler
-    // ausgelöst. Alle Klassen der Engine sind so ausgerichtet, daß sie
+    // ausgelöst. Alle Klassen der Engine sind so ausgerichtet, dass sie
     // bei einem VB-Fehler komplett zurückfallen zur Aufrufstelle des
     // Parsers bzw. Interpreters, d.h. jeder Syntaxfehler usw. ist für
     // den Script-Host ein trappable error.

@@ -1,7 +1,7 @@
-﻿
+
 using System.Collections.Generic;
 
-namespace Basic_Script_Interpreter
+namespace basic_script_interpreter
 {
    
     // Identifier: Dient während Compile- und Laufzeit zur
@@ -28,14 +28,14 @@ namespace Basic_Script_Interpreter
         }
 
 
-        public string Name;
-        public object Value;
+        public string name;
+        public object value;
 
-        public IdentifierTypes IdType;
+        public IdentifierTypes idType;
 
-        public int Address; // Adresse der Funktion
+        public int address; // Adresse der Funktion
      
-        public List<object> FormalParameters; // nur bei Funktionen: Namen der formalen Parameter
+        public List<object> formalParameters; // nur bei Funktionen: Namen der formalen Parameter
     }
 
 }

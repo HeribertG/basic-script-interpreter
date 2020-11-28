@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System;
 
-namespace Basic_Script_Interpreter
+namespace basic_script_interpreter
 {
-    public static class Formathelper
+  public static class Formathelper
     {
 
         public static double FormatDoubleNumber(string value)

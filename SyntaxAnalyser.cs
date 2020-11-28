@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 
-namespace Basic_Script_Interpreter
+namespace basic_script_interpreter
 {
 
     // SyntaxAnalyser: Führt die Syntaxanalyser durch, erzeugt
-    // aber auch den Code. Der Parser steuert den ganzen Übersetzungsprozeß.
+    // aber auch den Code. Der Parser steuert den ganzen Übersetzungsprozess.
 
     public class SyntaxAnalyser
     {
@@ -57,7 +57,7 @@ namespace Basic_Script_Interpreter
             GetNextSymbol();
 
             // --- Wurzelregel der Grammatik aufrufen und Syntaxanalyse starten
-            StatementList(false, true, (int)Exits.exitNone, Symbol.Tokens.tokEOF);
+            StatementList(false, true, (int)Exits.exitNone, Symbol.Tokens.tokEof);
 
             if (errorObject.Number != 0)
             {
@@ -65,11 +65,11 @@ namespace Basic_Script_Interpreter
             }
 
 
-            // Wenn wir hier ankommen, dann muß der komplette Code korrekt erkannt
+            // Wenn wir hier ankommen, dann muss der komplette Code korrekt erkannt
             // worden sein, d.h. es sind alle Symbole gelesen. Falls also nicht
             // das EOF-Symbol aktuell ist, ist ein Symbol nicht erkannt worden und
             // ein Fehler liegt vor.
-            if (!sym.Token.Equals(Symbol.Tokens.tokEOF))
+            if (!sym.Token.Equals(Symbol.Tokens.tokEof))
                 errorObject.Raise((int)InterpreterError.parsErrors.errUnexpectedSymbol, "SyntaxAnalyser.Parse", "Expected: end of statement", sym.Line, sym.Col, sym.Index, sym.Text);
 
             return this.code;
@@ -83,7 +83,7 @@ namespace Basic_Script_Interpreter
             return sym;
         }
 
-        private bool InSymbolSet(Symbol.Tokens Token, params Symbol.Tokens[] tokenSet)
+        private bool InSymbolSet(Symbol.Tokens token, params Symbol.Tokens[] tokenSet)
         {
             //for (int i = 0; i <= tokenSet.Length - 1; i++)
             //{
@@ -94,7 +94,7 @@ namespace Basic_Script_Interpreter
             //    }
             //}
 
-            return tokenSet.Contains(Token);
+            return tokenSet.Contains(token);
             //return false;
         }
 
@@ -123,7 +123,7 @@ namespace Basic_Script_Interpreter
                 Statement(singleLineOnly, allowFunctionDeclarations, exitsAllowed);
 
             }
-            while (true);
+            while (code.ErrorObject.Number ==0);
         }
 
 
@@ -134,7 +134,7 @@ namespace Basic_Script_Interpreter
             // Symbol.Tokens op;
             switch (sym.Token)
             {
-                case Symbol.Tokens.tokEXTERNAL:
+                case Symbol.Tokens.tokExternal:
                     {
                         if (allowExternal)
                         {
@@ -147,7 +147,7 @@ namespace Basic_Script_Interpreter
                         break;
                     }
 
-                case Symbol.Tokens.tokCONST:
+                case Symbol.Tokens.tokConst:
                     {
                         GetNextSymbol();
 
@@ -155,7 +155,7 @@ namespace Basic_Script_Interpreter
                         break;
                     }
 
-                case Symbol.Tokens.tokDIM:
+                case Symbol.Tokens.tokDim:
                     {
                         GetNextSymbol();
 
@@ -163,7 +163,7 @@ namespace Basic_Script_Interpreter
                         break;
                     }
 
-                case Symbol.Tokens.tokFUNCTION:
+                case Symbol.Tokens.tokFunction:
                     {
                         if (allowFunctionDeclarations)
                             FunctionDefinition();
@@ -173,7 +173,7 @@ namespace Basic_Script_Interpreter
                             errorObject.Raise((int)InterpreterError.parsErrors.errSyntaxViolation, "SyntaxAnalyser.Statement", "No function declarations allowed at this point", sym.Line, sym.Col, sym.Index, sym.Text);
                         break;
                     }
-                case Symbol.Tokens.tokSUB:
+                case Symbol.Tokens.tokSub:
                     {
                         if (allowFunctionDeclarations)
                             FunctionDefinition();
@@ -184,7 +184,7 @@ namespace Basic_Script_Interpreter
                         break;
                     }
 
-                case Symbol.Tokens.tokIF:
+                case Symbol.Tokens.tokIf:
                     {
                         GetNextSymbol();
 
@@ -192,7 +192,7 @@ namespace Basic_Script_Interpreter
                         break;
                     }
 
-                case Symbol.Tokens.tokFOR:
+                case Symbol.Tokens.tokFor:
                     {
                         GetNextSymbol();
 
@@ -200,7 +200,7 @@ namespace Basic_Script_Interpreter
                         break;
                     }
 
-                case Symbol.Tokens.tokDO:
+                case Symbol.Tokens.tokDo:
                     {
                         GetNextSymbol();
 
@@ -208,13 +208,13 @@ namespace Basic_Script_Interpreter
                         break;
                     }
 
-                case Symbol.Tokens.tokEXIT:
+                case Symbol.Tokens.tokExit:
                     {
                         GetNextSymbol();
 
                         switch (sym.Token)
                         {
-                            case Symbol.Tokens.tokDO:
+                            case Symbol.Tokens.tokDo:
                                 {
                                     if (exitsAllowed + Exits.exitDo == Exits.exitDo)
 
@@ -224,7 +224,7 @@ namespace Basic_Script_Interpreter
                                     break;
                                 }
 
-                            case Symbol.Tokens.tokFOR:
+                            case Symbol.Tokens.tokFor:
                                 {
                                     if ((Convert.ToByte(exitsAllowed) & Convert.ToByte(Exits.exitFor)) == Convert.ToByte(Exits.exitFor))
 
@@ -234,7 +234,7 @@ namespace Basic_Script_Interpreter
                                     break;
                                 }
 
-                            case Symbol.Tokens.tokSUB:
+                            case Symbol.Tokens.tokSub:
                                 {
                                     if ((Convert.ToByte(exitsAllowed) & Convert.ToByte(Exits.exitSub)) == Convert.ToByte(Exits.exitSub))
 
@@ -247,7 +247,7 @@ namespace Basic_Script_Interpreter
                                     break;
                                 }
 
-                            case Symbol.Tokens.tokFUNCTION:
+                            case Symbol.Tokens.tokFunction:
                                 {
                                     if ((Convert.ToByte(exitsAllowed) & Convert.ToByte(Exits.exitFunction)) == Convert.ToByte(Exits.exitFunction))
 
@@ -470,7 +470,7 @@ namespace Basic_Script_Interpreter
             int skipFunctionPC;
             bool isSub;
 
-            isSub = Convert.ToBoolean(sym.Token == Symbol.Tokens.tokSUB);
+            isSub = Convert.ToBoolean(sym.Token == Symbol.Tokens.tokSub);
 
             GetNextSymbol();
 
@@ -505,44 +505,44 @@ namespace Basic_Script_Interpreter
 
 
                 // Funktion im aktuellen Scope definieren
-                definition = symboltable.Allocate(ident, null, isSub == true ? Identifier.IdentifierTypes.idSub : Identifier.IdentifierTypes.idFunction);
+                definition = symboltable.Allocate(ident, null, isSub ? Identifier.IdentifierTypes.idSub : Identifier.IdentifierTypes.idFunction);
                 code.Add(Code.Opcodes.opAllocVar, ident); // Funktionsvariable anlegen
 
                 // in der sequentiellen Codeausführung die Funktion überspringen
                 skipFunctionPC = code.Add(Code.Opcodes.opJump);
-                definition.Address = code.EndOfCodePC;
+                definition.address = code.EndOfCodePc;
 
                 // Neuen Scope für die Funktion öffnen
                 symboltable.PushScope();
 
                 // Formale Parameter als lokale Variablen der Funktion definieren
-                definition.FormalParameters = formalParameters;
+                definition.formalParameters = formalParameters;
                 for (int i = 0; i <= formalParameters.Count() - 1; i++)
-                    symboltable.Allocate(formalParameters[i].ToString(), null, Identifier.IdentifierTypes.idVariable);
+                    symboltable.Allocate(formalParameters[i].ToString(), null);
 
                 // Funktionsrumpf übersetzen
                 // (er darf auch wieder Funktionsdefinitionen enthalten!)
-                StatementList(false, true, isSub == true ? (int)Exits.exitSub : (int)Exits.exitFunction, Symbol.Tokens.tokEOF, Symbol.Tokens.tokEND, Symbol.Tokens.tokENDFUNCTION, Symbol.Tokens.tokENDSUB); // geschachtelte Funktionsdefinitionen erlaubt
+                StatementList(false, true, isSub != true ? (int)Exits.exitFunction : (int)Exits.exitSub, Symbol.Tokens.tokEof, Symbol.Tokens.tokEnd, Symbol.Tokens.tokEndfunction, Symbol.Tokens.tokEndsub); // geschachtelte Funktionsdefinitionen erlaubt
 
                 // Ist die Funktion korrekt abgeschlossen worden?
                 // (etwas unelegant, aber irgendwie nicht zu umgehen, wenn man
                 // mehrwortige Endsymbole und Alternativen erlauben will)
-                if (sym.Token == Symbol.Tokens.tokENDFUNCTION | sym.Token == Symbol.Tokens.tokENDSUB)
+                if (sym.Token == Symbol.Tokens.tokEndfunction | sym.Token == Symbol.Tokens.tokEndsub)
                 {
-                    if (isSub & sym.Token != Symbol.Tokens.tokENDSUB)
+                    if (isSub & sym.Token != Symbol.Tokens.tokEndsub)
                         errorObject.Raise((int)InterpreterError.parsErrors.errSyntaxViolation, "SyntaxAnalyser.FunctionDefinition", "Expected: 'END SUB' or 'ENDSUB' at end of sub body", sym.Line, sym.Col, sym.Index, sym.Text);
 
                     GetNextSymbol();
 
                     goto GenerateEndFunctionCode;
                 }
-                else if (sym.Token == Symbol.Tokens.tokEND)
+                else if (sym.Token == Symbol.Tokens.tokEnd)
                 {
                     GetNextSymbol();
 
                     if (isSub)
                     {
-                        if (sym.Token == Symbol.Tokens.tokSUB)
+                        if (sym.Token == Symbol.Tokens.tokSub)
                         {
                             GetNextSymbol();
                             goto GenerateEndFunctionCode;
@@ -550,7 +550,7 @@ namespace Basic_Script_Interpreter
                         else
                             errorObject.Raise((int)InterpreterError.parsErrors.errSyntaxViolation, "SyntaxAnalyser.FunctionDefinition", "Expected: 'END SUB' or 'ENDSUB' at end of sub body", sym.Line, sym.Col, sym.Index, sym.Text);
                     }
-                    else if (sym.Token == Symbol.Tokens.tokFUNCTION)
+                    else if (sym.Token == Symbol.Tokens.tokFunction)
                     {
                         GetNextSymbol();
                         goto GenerateEndFunctionCode;
@@ -572,14 +572,14 @@ namespace Basic_Script_Interpreter
 
             code.Add(Code.Opcodes.opReturn);
 
-            code.FixUp(skipFunctionPC - 1, code.EndOfCodePC);
+            code.FixUp(skipFunctionPC - 1, code.EndOfCodePc);
         }
 
 
         // FORStatement ::= "FOR" variable "=" Value "TO" [ "STEP" Value ] Value Statementlist "NEXT"
         // (Achtung: bei FOR, DO, IF kann die Anweisung entweder über mehrere Zeilen laufen
-        // und muß dann mit einem entsprechenden Endesymbol abgeschlossen sein (NEXT, END IF usw.). Oder
-        // sie umfaßt nur 1 Zeile und bedarf keines Abschlusses! Daher der Aufwand mit
+        // und muss dann mit einem entsprechenden Endesymbol abgeschlossen sein (NEXT, END IF usw.). Oder
+        // sie umfasst nur 1 Zeile und bedarf keines Abschlusses! Daher der Aufwand mit
         // singleLineOnly und thisFORisSingleLineOnly.
         private void FORStatement(bool singleLineOnly, int exitsAllowed)
         {
@@ -606,13 +606,13 @@ namespace Basic_Script_Interpreter
                     // Startwert (auf dem Stack) der Zählervariablen zuweisen
                     code.Add(Code.Opcodes.opAssign, counterVariable);
 
-                    if (sym.Token == Symbol.Tokens.tokTO)
+                    if (sym.Token == Symbol.Tokens.tokTo)
                     {
                         GetNextSymbol();
 
                         Condition(); // Endwert der FOR-Schleife
 
-                        if (sym.Token == Symbol.Tokens.tokSTEP)
+                        if (sym.Token == Symbol.Tokens.tokStep)
                         {
                             GetNextSymbol();
 
@@ -623,12 +623,12 @@ namespace Basic_Script_Interpreter
                             code.Add(Code.Opcodes.opPushValue, 1);
 
 
-                        // EXIT-Adresse auf Stack legen. Es ist wichtig, daß sie zuoberst liegt!
+                        // EXIT-Adresse auf Stack legen. Es ist wichtig, dass sie zuoberst liegt!
                         // Nur so kommen wir jederzeit an sie mit EXIT heran.
                         pushExitAddrPC = code.Add(Code.Opcodes.opPushValue);
 
                         // hier gehen endlich die Statements innerhalb der Schleife los
-                        forPC = code.EndOfCodePC;
+                        forPC = code.EndOfCodePc;
 
                         thisFORisSingleLineOnly = !(sym.Token == Symbol.Tokens.tokStatementDelimiter & sym.Text == "\n");
                         if (sym.Token == Symbol.Tokens.tokStatementDelimiter)
@@ -637,9 +637,9 @@ namespace Basic_Script_Interpreter
                         singleLineOnly = singleLineOnly | thisFORisSingleLineOnly;
 
                         // FOR-body
-                        StatementList(singleLineOnly, false, Convert.ToByte(Exits.exitFor) | Convert.ToByte(exitsAllowed), Symbol.Tokens.tokEOF, Symbol.Tokens.tokNEXT);
+                        StatementList(singleLineOnly, false, Convert.ToByte(Exits.exitFor) | Convert.ToByte(exitsAllowed), Symbol.Tokens.tokEof, Symbol.Tokens.tokNext);
 
-                        if (sym.Token == Symbol.Tokens.tokNEXT)
+                        if (sym.Token == Symbol.Tokens.tokNext)
                             GetNextSymbol();
                         else if (!thisFORisSingleLineOnly)
                             errorObject.Raise((int)InterpreterError.parsErrors.errSyntaxViolation, "SyntaxAnalyser.FORStatement", "Expected: 'NEXT' at end of FOR-statement", sym.Line, sym.Col, sym.Index, sym.Text);
@@ -662,7 +662,7 @@ namespace Basic_Script_Interpreter
 
                         // Stack bereinigen von allen durch FOR darauf zwischengespeicherten Werten
                         code.Add(Code.Opcodes.opPop); // Exit-Adresse vom Stack entfernen
-                        code.FixUp(pushExitAddrPC - 1, code.EndOfCodePC); // Adresse setzen, zu der EXIT springen soll
+                        code.FixUp(pushExitAddrPC - 1, code.EndOfCodePc); // Adresse setzen, zu der EXIT springen soll
                         code.Add(Code.Opcodes.opPop); // Schrittweite
                         code.Add(Code.Opcodes.opPop); // Endwert
                     }
@@ -693,9 +693,9 @@ namespace Basic_Script_Interpreter
 
             pushExitAddrPC = code.Add(Code.Opcodes.opPushValue);
 
-            doPC = code.EndOfCodePC;
+            doPC = code.EndOfCodePc;
 
-            if (sym.Token == Symbol.Tokens.tokWHILE)
+            if (sym.Token == Symbol.Tokens.tokWhile)
             {
                 // DO-WHILE
                 doWhile = true;
@@ -714,21 +714,21 @@ namespace Basic_Script_Interpreter
             singleLineOnly = singleLineOnly | thisDOisSingleLineOnly;
 
             // DO-body
-            StatementList(singleLineOnly, false, Convert.ToByte(Exits.exitDo) | Convert.ToByte(exitsAllowed), Symbol.Tokens.tokEOF, Symbol.Tokens.tokLOOP);
+            StatementList(singleLineOnly, false, Convert.ToByte(Exits.exitDo) | Convert.ToByte(exitsAllowed), Symbol.Tokens.tokEof, Symbol.Tokens.tokLoop);
 
             bool loopWhile;
-            if (sym.Token == Symbol.Tokens.tokLOOP)
+            if (sym.Token == Symbol.Tokens.tokLoop)
             {
                 GetNextSymbol();
 
                 switch (sym.Token)
                 {
-                    case Symbol.Tokens.tokWHILE:
+                    case Symbol.Tokens.tokWhile:
                         {
                             if (doWhile == true)
                                 errorObject.Raise((int)InterpreterError.parsErrors.errUnexpectedSymbol, "SyntaxAnalyser.DoStatement", "No 'WHILE'/'UNTIL' allowed after 'LOOP' in DO-WHILE-statement", sym.Line, sym.Col, sym.Index);
 
-                            loopWhile = sym.Token == Symbol.Tokens.tokWHILE;
+                            loopWhile = sym.Token == Symbol.Tokens.tokWhile;
 
                             GetNextSymbol();
 
@@ -740,15 +740,15 @@ namespace Basic_Script_Interpreter
 
                             code.Add(Code.Opcodes.opPop); // Exit-Adresse vom Stack entfernen
 
-                            code.FixUp(pushExitAddrPC - 1, code.EndOfCodePC); // Adresse setzen, zu der EXIT springen soll
+                            code.FixUp(pushExitAddrPC - 1, code.EndOfCodePc); // Adresse setzen, zu der EXIT springen soll
                             break;
                         }
-                    case Symbol.Tokens.tokUNTIL:
+                    case Symbol.Tokens.tokUntil:
                         {
                             if (doWhile == true)
                                 errorObject.Raise((int)InterpreterError.parsErrors.errUnexpectedSymbol, "SyntaxAnalyser.DoStatement", "No 'WHILE'/'UNTIL' allowed after 'LOOP' in DO-WHILE-statement", sym.Line, sym.Col, sym.Index);
 
-                            loopWhile = sym.Token == Symbol.Tokens.tokWHILE;
+                            loopWhile = sym.Token == Symbol.Tokens.tokWhile;
 
                             GetNextSymbol();
 
@@ -760,7 +760,7 @@ namespace Basic_Script_Interpreter
 
                             code.Add(Code.Opcodes.opPop); // Exit-Adresse vom Stack entfernen
 
-                            code.FixUp(pushExitAddrPC - 1, code.EndOfCodePC); // Adresse setzen, zu der EXIT springen soll
+                            code.FixUp(pushExitAddrPC - 1, code.EndOfCodePc); // Adresse setzen, zu der EXIT springen soll
                             break;
                         }
 
@@ -769,11 +769,11 @@ namespace Basic_Script_Interpreter
 
                             code.Add(Code.Opcodes.opJump, doPC);
                             if (doWhile == true)
-                                code.FixUp(conditionPC - 1, code.EndOfCodePC);
+                                code.FixUp(conditionPC - 1, code.EndOfCodePc);
 
                             code.Add(Code.Opcodes.opPop); // Exit-Adresse vom Stack entfernen, sie wurde ja nicht benutzt
 
-                            code.FixUp(pushExitAddrPC - 1, code.EndOfCodePC); // Adresse setzen, zu der EXIT springen soll
+                            code.FixUp(pushExitAddrPC - 1, code.EndOfCodePc); // Adresse setzen, zu der EXIT springen soll
                             break;
                         }
                 }
@@ -793,7 +793,7 @@ namespace Basic_Script_Interpreter
 
             int thenPC = 0;
             int elsePC = 0;
-            if (sym.Token == Symbol.Tokens.tokTHEN)
+            if (sym.Token == Symbol.Tokens.tokThen)
             {
                 GetNextSymbol();
 
@@ -807,9 +807,9 @@ namespace Basic_Script_Interpreter
                 thenPC = code.Add(Code.Opcodes.opJumpFalse);
                 // Spring zum ELSE-Teil oder ans Ende
 
-                StatementList(singleLineOnly, false, exitsAllowed, Symbol.Tokens.tokEOF, Symbol.Tokens.tokELSE, Symbol.Tokens.tokEND, Symbol.Tokens.tokENDIF);
+                StatementList(singleLineOnly, false, exitsAllowed, Symbol.Tokens.tokEof, Symbol.Tokens.tokElse, Symbol.Tokens.tokEnd, Symbol.Tokens.tokEndif);
 
-                if (sym.Token == Symbol.Tokens.tokELSE)
+                if (sym.Token == Symbol.Tokens.tokElse)
                 {
 
                     elsePC = code.Add(Code.Opcodes.opJump); // Spring ans Ende
@@ -817,19 +817,19 @@ namespace Basic_Script_Interpreter
 
                     GetNextSymbol();
 
-                    StatementList(singleLineOnly, false, exitsAllowed, Symbol.Tokens.tokEOF, Symbol.Tokens.tokEND, Symbol.Tokens.tokENDIF);
+                    StatementList(singleLineOnly, false, exitsAllowed, Symbol.Tokens.tokEof, Symbol.Tokens.tokEnd, Symbol.Tokens.tokEndif);
                 }
 
-                if (sym.Token == Symbol.Tokens.tokEND)
+                if (sym.Token == Symbol.Tokens.tokEnd)
                 {
                     GetNextSymbol();
 
-                    if (sym.Token == Symbol.Tokens.tokIF)
+                    if (sym.Token == Symbol.Tokens.tokIf)
                         GetNextSymbol();
                     else
                         errorObject.Raise((int)InterpreterError.parsErrors.errSyntaxViolation, "SyntaxAnalyser.IFStatement", "'END IF' or 'ENDIF' expected to close IF-statement", sym.Line, sym.Col, sym.Index, sym.Text);
                 }
-                else if (sym.Token == Symbol.Tokens.tokENDIF)
+                else if (sym.Token == Symbol.Tokens.tokEndif)
                     GetNextSymbol();
                 else if (!thisIFisSingleLineOnly)
                     // kein 'END IF' zu finden ist nur ein Fehler, wenn das IF über mehrere Zeilen geht
@@ -840,9 +840,9 @@ namespace Basic_Script_Interpreter
 
 
             if (elsePC == 0)
-                code.FixUp(thenPC - 1, code.EndOfCodePC);
+                code.FixUp(thenPC - 1, code.EndOfCodePc);
             else
-                code.FixUp(elsePC - 1, code.EndOfCodePC);
+                code.FixUp(elsePC - 1, code.EndOfCodePc);
         }
 
 
@@ -853,7 +853,7 @@ namespace Basic_Script_Interpreter
             // ConditionalTerm { "OR" ConditionalTerm }
             ConditionalTerm();
 
-            while (InSymbolSet(sym.Token, Symbol.Tokens.tokOR))
+            while (InSymbolSet(sym.Token, Symbol.Tokens.tokOr))
             {
                 GetNextSymbol();
                 ConditionalTerm();
@@ -872,7 +872,7 @@ namespace Basic_Script_Interpreter
 
             ConditionalFactor();
 
-            while (InSymbolSet(sym.Token, Symbol.Tokens.tokAND))
+            while (InSymbolSet(sym.Token, Symbol.Tokens.tokAnd))
             {
 
                 operandPCs.Add(code.Add(Code.Opcodes.opJumpFalse));
@@ -896,10 +896,10 @@ namespace Basic_Script_Interpreter
                 // Alle Sprünge von Operandentests hierher umleiten, da
                 // sie ja FALSE ergeben haben
                 for (int i = 0; i < operandPCs.Count(); i++)
-                    code.FixUp(Convert.ToInt32(operandPCs[i]) - 1, code.EndOfCodePC);
+                    code.FixUp(Convert.ToInt32(operandPCs[i]) - 1, code.EndOfCodePc);
                 code.Add(Code.Opcodes.opPushValue, false); // also dieses Ergebnis auch auf den Stack legen
 
-                code.FixUp(thenPC-1, code.EndOfCodePC);
+                code.FixUp(thenPC-1, code.EndOfCodePc);
             }
         }
 
@@ -911,7 +911,7 @@ namespace Basic_Script_Interpreter
 
             Expression();
 
-            while (InSymbolSet(sym.Token, Symbol.Tokens.tokEq, Symbol.Tokens.tokNotEq, Symbol.Tokens.tokLEq, Symbol.Tokens.tokLT, Symbol.Tokens.tokGEq, Symbol.Tokens.tokGT))
+            while (InSymbolSet(sym.Token, Symbol.Tokens.tokEq, Symbol.Tokens.tokNotEq, Symbol.Tokens.tokLEq, Symbol.Tokens.tokLt, Symbol.Tokens.tokGEq, Symbol.Tokens.tokGt))
             {
                 operator_Renamed = sym.Token;
 
@@ -940,7 +940,7 @@ namespace Basic_Script_Interpreter
                             break;
                         }
 
-                    case Symbol.Tokens.tokLT:
+                    case Symbol.Tokens.tokLt:
                         {
                             code.Add(Code.Opcodes.oplt);
                             break;
@@ -952,7 +952,7 @@ namespace Basic_Script_Interpreter
                             break;
                         }
 
-                    case Symbol.Tokens.tokGT:
+                    case Symbol.Tokens.tokGt:
                         {
                             code.Add(Code.Opcodes.opGt);
                             break;
@@ -1098,7 +1098,7 @@ namespace Basic_Script_Interpreter
                         break;
                     }
 
-                case Symbol.Tokens.tokNOT // "NOT" Terminal
+                case Symbol.Tokens.tokNot // "NOT" Terminal
          :
                     {
                         GetNextSymbol();
@@ -1176,7 +1176,7 @@ namespace Basic_Script_Interpreter
                         break;
                     }
 
-                case Symbol.Tokens.tokPI:
+                case Symbol.Tokens.tokPi:
                     {
 
                         code.Add(Code.Opcodes.opPushValue, 3.141592654);
@@ -1240,7 +1240,7 @@ namespace Basic_Script_Interpreter
                 case Symbol.Tokens.tokATan:
                     operator_Renamed = ComplexGeometry(sym.Token);
                     break;
-                case Symbol.Tokens.tokIIF // "IIF" "(" Condition "," Condition "," Condition ")"
+                case Symbol.Tokens.tokIif // "IIF" "(" Condition "," Condition "," Condition ")"
          :
                     {
                         GetNextSymbol();
@@ -1261,7 +1261,7 @@ namespace Basic_Script_Interpreter
 
 
                                 elsePC = code.Add(Code.Opcodes.opJump);
-                                code.FixUp(thenPC - 1, code.EndOfCodePC);
+                                code.FixUp(thenPC - 1, code.EndOfCodePc);
 
                                 if (sym.Token == Symbol.Tokens.tokComma)
                                 {
@@ -1270,7 +1270,7 @@ namespace Basic_Script_Interpreter
                                     Condition(); // false Value
 
 
-                                    code.FixUp(elsePC - 1, code.EndOfCodePC);
+                                    code.FixUp(elsePC - 1, code.EndOfCodePc);
 
                                     if (sym.Token == Symbol.Tokens.tokRightParent)
                                         GetNextSymbol();
@@ -1302,7 +1302,7 @@ namespace Basic_Script_Interpreter
                         break;
                     }
 
-                case Symbol.Tokens.tokEOF:
+                case Symbol.Tokens.tokEof:
                     {
                         errorObject.Raise((int)InterpreterError.parsErrors.errUnexpectedSymbol, "SyntaxAnalyser.Terminal", "Identifier or function or '(' expected but end of source found", sym.Line, sym.Col, sym.Index, sym.Text);
                         break;
@@ -1361,8 +1361,8 @@ namespace Basic_Script_Interpreter
 
         private void ActualOptionalParameter(object default_Renamed)
         {
-            if (sym.Token == Symbol.Tokens.tokComma | sym.Token == Symbol.Tokens.tokStatementDelimiter | sym.Token == Symbol.Tokens.tokEOF | sym.Token == Symbol.Tokens.tokRightParent)
-                // statt eines Parameters sind wir nur auf ein "," oder das Statement-Ende gestoßen
+            if (sym.Token == Symbol.Tokens.tokComma | sym.Token == Symbol.Tokens.tokStatementDelimiter | sym.Token == Symbol.Tokens.tokEof | sym.Token == Symbol.Tokens.tokRightParent)
+                // statt eines Parameters sind wir nur auf ein "," oder das Statement-Ende gestossen
                 // wir nehmen daher den default-Wert an
                 code.Add(Code.Opcodes.opPushValue, default_Renamed);
             else
@@ -1402,14 +1402,14 @@ namespace Basic_Script_Interpreter
             int n = 0;
             int i = 0;
 
-            if (sym.Token == Symbol.Tokens.tokStatementDelimiter | sym.Token == Symbol.Tokens.tokEOF)
+            if (sym.Token == Symbol.Tokens.tokStatementDelimiter | sym.Token == Symbol.Tokens.tokEof)
                 // Aufruf ohne Parameter
                 n = 0;
             else
                 // Funktion mit Parametern: Parameter { "," Parameter }
                 do
                 {
-                    if (n > definition.FormalParameters.Count - 1) { break; }
+                    if (n > definition.formalParameters.Count - 1) { break; }
                     if (n > 0) { GetNextSymbol(); }
 
                     Condition();
@@ -1420,16 +1420,16 @@ namespace Basic_Script_Interpreter
                 while (sym.Token == Symbol.Tokens.tokComma);
 
             // Wurde die richtige Anzahl Parameter übergeben?
-            if (definition.FormalParameters.Count != n)
-                errorObject.Raise((int)InterpreterError.parsErrors.errWrongNumberOfParams, "SyntaxAnalyser.Statement", "Wrong number of parameters in call to function '" + ident + "' (" + definition.FormalParameters.Count + " expected but " + n + " found)", sym.Line, sym.Col, sym.Index, sym.Text);
+            if (definition.formalParameters.Count != n)
+                errorObject.Raise((int)InterpreterError.parsErrors.errWrongNumberOfParams, "SyntaxAnalyser.Statement", "Wrong number of parameters in call to function '" + ident + "' (" + definition.formalParameters.Count + " expected but " + n + " found)", sym.Line, sym.Col, sym.Index, sym.Text);
 
 
             // Formale Parameter als lokale Variablen der Funktion definieren und zuweisen
             // (in umgekehrter Reihenfolge, weil die Werte so auf dem Stack liegen)
-            for (i = definition.FormalParameters.Count - 1; i >= 0; i += -1)
+            for (i = definition.formalParameters.Count - 1; i >= 0; i += -1)
             {
-                code.Add(Code.Opcodes.opAllocVar, definition.FormalParameters[i]);
-                code.Add(Code.Opcodes.opAssign, definition.FormalParameters[i]);
+                code.Add(Code.Opcodes.opAllocVar, definition.formalParameters[i]);
+                code.Add(Code.Opcodes.opAssign, definition.formalParameters[i]);
             }
 
             if (requireRightParent)
@@ -1442,7 +1442,7 @@ namespace Basic_Script_Interpreter
 
 
             // --- Funktion rufen
-            code.Add(Code.Opcodes.opCall, definition.Address);
+            code.Add(Code.Opcodes.opCall, definition.address);
 
             // --- Scopes aufräumen
             code.Add(Code.Opcodes.opPopScope);
