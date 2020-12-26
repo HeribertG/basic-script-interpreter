@@ -11,4 +11,8 @@
     <Optimize>false</Optimize>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Imports.cs" />
+  </ItemGroup>
+
 </Project>

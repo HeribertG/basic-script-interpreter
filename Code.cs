@@ -411,72 +411,30 @@ namespace basic_script_interpreter
             }
 
           case Opcodes.opAdd:
-            BinaryMathOperators(operation, akkumulator, register);
-            break;
           case Opcodes.opSub:
-            BinaryMathOperators(operation, akkumulator, register);
-            break;
           case Opcodes.opMultiplication:
-            BinaryMathOperators(operation, akkumulator, register);
-            break;
           case Opcodes.opDivision:
-            BinaryMathOperators(operation, akkumulator, register);
-            break;
           case Opcodes.opDiv:
-            BinaryMathOperators(operation, akkumulator, register);
-            break;
           case Opcodes.opMod:
-            BinaryMathOperators(operation, akkumulator, register);
-            break;
           case Opcodes.opPower:
-            BinaryMathOperators(operation, akkumulator, register);
-            break;
           case Opcodes.opStringConcat:
-            BinaryMathOperators(operation, akkumulator, register);
-            break;
           case Opcodes.opOr:
-            BinaryMathOperators(operation, akkumulator, register);
-            break;
           case Opcodes.opAnd:
-            BinaryMathOperators(operation, akkumulator, register);
-            break;
           case Opcodes.opEq:
-            BinaryMathOperators(operation, akkumulator, register);
-            break;
           case Opcodes.opNotEq:
-            BinaryMathOperators(operation, akkumulator, register);
-            break;
           case Opcodes.oplt:
-            BinaryMathOperators(operation, akkumulator, register);
-            break;
           case Opcodes.opLEq:
-            BinaryMathOperators(operation, akkumulator, register);
-            break;
           case Opcodes.opGt:
-            BinaryMathOperators(operation, akkumulator, register);
-            break;
           case Opcodes.opGEq:
             BinaryMathOperators(operation, akkumulator, register);
             break;
 
           case Opcodes.opNegate:
-            UnaryMathOperators(operation);
-            break;
           case Opcodes.opNot:
-            UnaryMathOperators(operation);
-            break;
           case Opcodes.opFactorial:
-            UnaryMathOperators(operation);
-            break;
           case Opcodes.opSin:
-            UnaryMathOperators(operation);
-            break;
           case Opcodes.opCos:
-            UnaryMathOperators(operation);
-            break;
           case Opcodes.opTan:
-            UnaryMathOperators(operation);
-            break;
           case Opcodes.opATan:
             UnaryMathOperators(operation);
             break;

@@ -1,4 +1,4 @@
-﻿using Basic_Script_Interpreter;
+﻿using basic_script_interpreter;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -21,14 +21,14 @@ namespace basic_script_interpreter
 
     public MacroEngine()
     {
-      Imports = new Imports();
+     
       code = new Code();
       importList = new List<string>();
       codeCollection = new Dictionary<Guid, ScriptCode>();
 
       AddEvent();
     }
-    public Imports Imports { get; set; }
+    public dynamic Imports { get; set; }
 
     public Code code { get; set; }
     public string  DebungText { get; set; }
@@ -172,7 +172,7 @@ namespace basic_script_interpreter
       code.ImportClear();
       importList.Clear();
 
-
+      script =RemoveDescription(script);
       while (i != -1)
       {
         i = script.IndexOf("Import");
@@ -204,19 +204,53 @@ namespace basic_script_interpreter
 
     }
 
+    private string RemoveDescription(string script)
+    {
+      int endposition;
+      var i = 1;
+      while (i != -1)
+      {
+        i = script.IndexOf("'");
+        if (i < 0) { break; }
+
+
+        if (!string.IsNullOrEmpty(script))
+        {
+          endposition = script.IndexOf("\r\n", i + 1, StringComparison.Ordinal);
+          if (endposition == -1)
+            endposition = script.IndexOf("\r", i + 1, StringComparison.Ordinal);
+          if (endposition == -1)
+            endposition = script.IndexOf("\n", i + 1, StringComparison.Ordinal);
+
+          if (endposition < i) { break; }
+
+
+          script = script.Remove(i, endposition - i + 1);
+
+
+          i = 0;
+
+        }
+      }
+
+
+      return script;
+
+    }
     private void SetImports(string key)
     {
       var res = ReadImports(key);
       code.ImportAdd(key, ReadImports(key), Identifier.IdentifierTypes.idVariable);
     }
 
+
     private object ReadImports(string key)
     {
-      Type type = Imports.GetType();
-      PropertyInfo info = type.GetProperty(key);
-      if (info == null) { return null; }
+      var tmp = (IDictionary<string, object>)Imports;
 
-      return info.GetValue(Imports, null);
+      if (tmp.ContainsKey(key)) { return  tmp[key]; }
+      return null;
+      
     }
 
     public void Dispose()
